@@ -353,6 +353,35 @@ ul{margin:0;padding:0;list-style:none}
 .wk-day.done{background:#eef9f1}
 .wk-day.done i{color:#4f9f6a}
 .wk-day.idle{opacity:.55}
+
+/* ---------------- 诗画播放器（内嵌） ---------------- */
+#poemView{position:fixed;inset:0;background:#0b120e;z-index:200;display:none;flex-direction:column}
+#poemView.on{display:flex}
+.pv-stage{position:relative;flex:1;overflow:hidden}
+.pv-slide{position:absolute;inset:0;opacity:0;transition:opacity .9s ease}
+.pv-slide.on{opacity:1}
+.pv-slide img{width:100%;height:100%;object-fit:cover;transform:scale(1.03);animation:pvkb 9s ease-out forwards}
+.pv-slide.noimg{background:linear-gradient(160deg,#24402f,#0f1a15)}
+.pv-slide.noimg::after{content:attr(data-em);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:96px;opacity:.55}
+@keyframes pvkb{from{transform:scale(1.03)}to{transform:scale(1.15)}}
+.pv-head{position:absolute;top:0;left:0;right:0;padding:calc(12px + env(safe-area-inset-top)) 16px 34px;
+ background:linear-gradient(#0009,transparent);text-align:center;pointer-events:none}
+.pv-head b{font-size:19px;letter-spacing:3px;color:#fff}
+.pv-head small{display:block;color:#cfe0d6;font-size:12.5px;margin-top:4px}
+.pv-close{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:34px;height:34px;border-radius:50%;
+ background:#0007;border:0;color:#fff;font-size:17px;z-index:3}
+.pv-foot{position:absolute;left:0;right:0;bottom:0;padding:64px 16px calc(14px + env(safe-area-inset-bottom));
+ background:linear-gradient(transparent,#000b 58%);text-align:center}
+.pv-line{font-size:clamp(23px,7vw,33px);letter-spacing:4px;font-weight:600;color:#fff;text-shadow:0 2px 12px #0009}
+.pv-py{color:#c6d8cd;font-size:14px;margin-top:7px;letter-spacing:1px}
+.pv-dots{display:flex;gap:7px;justify-content:center;margin:13px 0 10px}
+.pv-dots i{width:7px;height:7px;border-radius:50%;background:#ffffff55}
+.pv-dots i.on{background:#8fe0a8;width:18px;border-radius:4px}
+.pv-ctrl{display:flex;gap:9px;justify-content:center}
+.pv-ctrl button{flex:1;max-width:120px;border:0;border-radius:13px;padding:12px 0;font-size:14.5px;font-weight:600;color:#0f1a15;background:#dfeae3}
+.pv-ctrl button.main{background:#7ec98f}
+.pv-ctrl button.ok{background:#ffd7e3}
+.pv-ctrl button:disabled{opacity:.35}
 </style>
 </head>
 <body class="mode-m">
@@ -2528,6 +2557,78 @@ VIEWS.luoji = ()=>lvHome('luoji');
 let GU_PY = true;
 const POEM_SLUG={'咏鹅':'yonge','静夜思':'jys','春晓':'chunxiao','悯农':'minnong','画':'hua','江雪':'jiangxue','登鹳雀楼':'guanque','相思':'xiangsi','寻隐者不遇':'xunyin','池上':'chishang'};
 function poemShow(t){ const sl=POEM_SLUG[t]; if(!sl) return; window.open('poem/#'+sl,'_blank'); }
+/* ---- 内嵌诗画播放器 ---- */
+const PV = { list:[], i:0, k:0, timer:null, playing:false };
+function poemIndexByTitle(t){ return (POEMS[MODE]||[]).findIndex(x=>x.t===t); }
+function poemOpen(i){
+  const p = (POEMS[MODE]||[])[i]; if(!p) return;
+  const slug = POEM_SLUG[p.t];
+  if(!slug){ toast('这首诗的诗画还在做，先看全文吧 🐰'); guOpen(i); return; }
+  PV.list = p.lines.map((_,k)=>`poem/${slug}/${k+1}.jpg`);
+  PV.i = i; PV.k = 0;
+  document.getElementById('pvStage').innerHTML = p.lines.map((_,k)=>
+    `<div class="pv-slide" id="pvs${k}" data-em="${p.em||'📜'}"><img src="${PV.list[k]}" alt="" onerror="this.style.display='none';this.parentNode.classList.add('noimg')"></div>`).join('');
+  document.getElementById('pvTitle').textContent = p.t;
+  document.getElementById('pvAuthor').textContent = p.a + (p.tag?' · '+p.tag:'');
+  document.getElementById('pvDots').innerHTML = p.lines.map((_,k)=>`<i id="pvd${k}"></i>`).join('');
+  document.getElementById('poemView').classList.add('on');
+  document.body.style.overflow='hidden';
+  poemShowLine(0); poemStart();
+}
+function poemShowLine(k){
+  const p = (POEMS[MODE]||[])[PV.i]; if(!p) return;
+  PV.k = k;
+  document.querySelectorAll('#pvStage .pv-slide').forEach((el,idx)=>el.classList.toggle('on', idx===k));
+  document.getElementById('pvLine').textContent = p.lines[k];
+  document.getElementById('pvPy').textContent = (p.py&&p.py[k])||'';
+  p.lines.forEach((_,idx)=>document.getElementById('pvd'+idx).classList.toggle('on', idx===k));
+  document.getElementById('pvPrev').disabled = k===0;
+  document.getElementById('pvNext').disabled = k===p.lines.length-1;
+  const img=document.querySelector('#pvs'+k+' img');
+  if(img){ const src=img.src; img.src=src; }
+}
+function poemSpeak(k){
+  const p=(POEMS[MODE]||[])[PV.i]; if(!p) return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(String(p.lines[k]).replace(/[，。？！、；：]$/,''));
+    u.lang='zh-CN'; u.rate=0.82;
+    const vs=speechSynthesis.getVoices().filter(v=>/zh/i.test(v.lang));
+    if(vs.length){ const pick=vs.find(v=>/婷婷|Tingting|美嘉|Xiaoxiao|Yaoyao/i.test(v.name))||vs[0]; u.voice=pick; }
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function poemSchedule(){ clearTimeout(PV.timer); PV.timer=setTimeout(poemAdvance, 5200); }
+function poemAdvance(){
+  if(!PV.playing) return;
+  const p=(POEMS[MODE]||[])[PV.i];
+  if(PV.k >= p.lines.length-1){ PV.playing=false; document.getElementById('pvToggle').textContent='重播'; return; }
+  poemShowLine(PV.k+1); poemSpeak(PV.k); poemSchedule();
+}
+function poemStart(){ PV.playing=true; document.getElementById('pvToggle').textContent='暂停'; poemSpeak(PV.k); poemSchedule(); save(); }
+function poemToggle(){
+  if(!PV.playing){
+    const p=(POEMS[MODE]||[])[PV.i];
+    if(PV.k>=p.lines.length-1){ poemShowLine(0); poemStart(); return; }
+    poemStart();
+  } else { PV.playing=false; clearTimeout(PV.timer); speechSynthesis.cancel(); document.getElementById('pvToggle').textContent='继续'; }
+}
+function poemNext(){ const p=(POEMS[MODE]||[])[PV.i]; if(PV.k<p.lines.length-1){ poemShowLine(PV.k+1); if(PV.playing){poemSpeak(PV.k); poemSchedule();} } }
+function poemPrev(){ if(PV.k>0){ poemShowLine(PV.k-1); if(PV.playing){poemSpeak(PV.k); poemSchedule();} } }
+function poemClose(){
+  PV.playing=false; clearTimeout(PV.timer); try{speechSynthesis.cancel();}catch(e){}
+  document.getElementById('poemView').classList.remove('on');
+  document.body.style.overflow='';
+}
+function poemFull(){ const i=PV.i; poemClose(); guOpen(i); }
+function poemBack(){
+  const p=(POEMS[MODE]||[])[PV.i]; if(!p) return poemClose();
+  poemClose();
+  if(!S.learnedPoems.includes(p.t)){ S.learnedPoems.push(p.t); S.bones+=2; save(); burst('⭐'); }
+  if(currentView==='gushi'){ go('gushi'); }
+  setTimeout(()=>toast('《'+p.t+'》记下啦 +2 骨头 🦴',1800), 260);
+}
+
 function guPoems(){ return POEMS[MODE] || []; }
 VIEWS.gushi = ()=>{
   const poems = guPoems();
@@ -2536,7 +2637,7 @@ VIEWS.gushi = ()=>{
   <div class="note">每一首都能点开看全文，听朗读、跟着念。</div>
   <div class="gu-list">
     ${poems.map((p,i)=>`
-      <button class="card gu-item" onclick="guOpen(${i})">
+      <button class="card gu-item" onclick="poemOpen(${i})">
         <span class="gu-em">${p.em||'📜'}</span>
         <span class="gu-main">
           <b>${p.t}</b>
@@ -2703,5 +2804,25 @@ function enReview(){
 
 boot();
 </script>
+
+<div id="poemView">
+  <div class="pv-stage" id="pvStage"></div>
+  <button class="pv-close" onclick="poemClose()">✕</button>
+  <div class="pv-head"><b id="pvTitle"></b><small id="pvAuthor"></small></div>
+  <div class="pv-foot">
+    <div class="pv-line" id="pvLine"></div>
+    <div class="pv-py" id="pvPy"></div>
+    <div class="pv-dots" id="pvDots"></div>
+    <div class="pv-ctrl">
+      <button id="pvPrev" onclick="poemPrev()">上一句</button>
+      <button class="main" id="pvToggle" onclick="poemToggle()">暂停</button>
+      <button id="pvNext" onclick="poemNext()">下一句</button>
+    </div>
+    <div class="pv-ctrl" style="margin-top:8px">
+      <button onclick="poemFull()">📄 看全文</button>
+      <button class="ok" onclick="poemBack()">✅ 我会背了</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
