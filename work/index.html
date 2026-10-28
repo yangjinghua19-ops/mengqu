@@ -2644,7 +2644,7 @@ VIEWS.gushi = ()=>{
           <small>${p.a} · ${p.tag||''}</small>
           <em>${(p.lines[0]||'')+(p.lines[1]||'')}</em>
         </span>
-        <span class="gu-play" onclick="event.stopPropagation();poemShow('${p.t}')">🎬</span>
+        <span class="gu-play" onclick="event.stopPropagation();poemOpen(${i})">🎬</span>
         ${S.learnedPoems.includes(p.t)
           ? '<span class="gu-ok">已会背 ✓</span>'
           : '<span class="gu-arrow">›</span>'}
