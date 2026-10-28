@@ -326,6 +326,7 @@ ul{margin:0;padding:0;list-style:none}
 .gu-main em{font-style:normal;display:block;color:#7e8c84;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gu-ok{color:#7ec98f;font-size:12.5px;white-space:nowrap;font-weight:700}
 .gu-arrow{color:#c3d3c8;font-size:22px}
+.gu-play{flex:0 0 auto;background:#eef9f1;border-radius:12px;padding:8px 10px;font-size:16px;margin-right:2px}
 .gu-line{padding:6px 0;cursor:pointer;border-radius:10px}
 .gu-line.gu-on{background:#f0f8f2}
 .gu-txt{display:block;font-size:23px;letter-spacing:3px;font-family:'Kaiti SC',STKaiti,serif;color:#3f5147}
@@ -1968,8 +1969,8 @@ VIEWS.guanka = function(){
 
   <div class="card" style="margin-bottom:14px">
     <div class="between"><b style="font-size:16px">📅 本周计划（第 ${idx+1} 周）</b><span class="pill">一关 = 一周</span></div>
-    ${weekStrip([...cur.map(c=>c.c), '复习', '休', '休'], (i)=> i<cur.length && gkLearned(cur[i].c))}
-    <div class="muted" style="margin-top:10px;font-size:13px">周一到周四每天学 1 个字（约 5 分钟），周五复习，周末休息。</div>
+    ${weekStrip([...cur.map(c=>c.c), '复习', '复习', '抽考'], (i)=> i<cur.length && gkLearned(cur[i].c))}
+    <div class="muted" style="margin-top:10px;font-size:13px">周一到周四每天学 1 个字（约 5 分钟），周五、周六复习，周日抽考。</div>
   </div>
   <div class="sec-title">第 ${idx+1} 周 · 这周要学的字</div>
   <div class="card gk-unit" onclick="gkOpenUnit(${idx})">
@@ -1996,7 +1997,7 @@ VIEWS.guanka = function(){
     <div class="gk-go">复习 ›</div>
   </div>`:''}
 
-  <div class="note">一关正好一周：周一到周四每天 1 个字（约 5 分钟），周五把这一关的字重写一遍当复习。学完 ${gkSize()} 个字自动进下一周。</div>`;
+  <div class="note">一关正好一周：周一到周四每天 1 个字（约 5 分钟），周五、周六复习，周日抽考。学完 ${gkSize()} 个字自动进下一周。</div>`;
 };
 function gkOpenUnit(i){ GK.unit = i; go('gkunit'); }
 
@@ -2525,6 +2526,8 @@ VIEWS.luoji = ()=>lvHome('luoji');
 
 /* ===== 古诗诵读：诗单 + 诗页（方案 A） ===== */
 let GU_PY = true;
+const POEM_SLUG={'咏鹅':'yonge','静夜思':'jys','春晓':'chunxiao','悯农':'minnong','画':'hua','江雪':'jiangxue','登鹳雀楼':'guanque','相思':'xiangsi','寻隐者不遇':'xunyin','池上':'chishang'};
+function poemShow(t){ const sl=POEM_SLUG[t]; if(!sl) return; window.open('poem/#'+sl,'_blank'); }
 function guPoems(){ return POEMS[MODE] || []; }
 VIEWS.gushi = ()=>{
   const poems = guPoems();
@@ -2540,6 +2543,7 @@ VIEWS.gushi = ()=>{
           <small>${p.a} · ${p.tag||''}</small>
           <em>${(p.lines[0]||'')+(p.lines[1]||'')}</em>
         </span>
+        <span class="gu-play" onclick="event.stopPropagation();poemShow('${p.t}')">🎬</span>
         ${S.learnedPoems.includes(p.t)
           ? '<span class="gu-ok">已会背 ✓</span>'
           : '<span class="gu-arrow">›</span>'}
@@ -2642,10 +2646,10 @@ VIEWS.yingyu = ()=>{
 
   <div class="card" style="margin-bottom:14px">
     <div class="between"><b style="font-size:16px">📅 本周计划</b><span class="pill">已完成 ${e.count||0}/1 关</span></div>
-    ${(()=>{ const tasks=['学','温','温','温','考','休','休'];
+    ${(()=>{ const tasks=['学','温','温','温','考','复习','抽考'];
       return weekStrip(tasks, (i)=> i===0 && (e.count||0)>0);
     })()}
-    <div class="muted" style="margin-top:10px;font-size:13px">周一学 4 个新词（约 6 分钟），周二到周四各复习一次，周五抽考，周末休息。</div>
+    <div class="muted" style="margin-top:10px;font-size:13px">周一学 4 个新词（约 6 分钟），周二到周四温习，周五抽考，周六复习，周日再抽考。</div>
   </div>
   ${cur ? `
   <div class="card">
