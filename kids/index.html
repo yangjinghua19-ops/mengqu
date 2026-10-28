@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f4fbf2">
+<title>朵朵闯关 · 小班第一单元</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:#f4fbf2;color:#2f4234;overflow-x:hidden;
+  -webkit-user-select:none;user-select:none;
+}
+:root{
+  --green:#7ec98f; --green-d:#4a8f5e; --green-l:#e4f6e8;
+  --pink:#ffb6c8; --pink-l:#ffe9ef;
+  --gold:#ffc94d; --gold-l:#fff3d6;
+  --ink:#2f4234; --muted:#7c8f83;
+  --card:#ffffff; --line:#e2efe6;
+}
+#app{max-width:760px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+
+/* 顶栏 */
+.top{
+  display:flex;align-items:center;gap:10px;padding:14px 16px 8px;
+  position:sticky;top:0;background:linear-gradient(#f4fbf2,#f4fbf2f2);z-index:20;
+}
+.back{
+  width:44px;height:44px;border-radius:14px;border:none;background:#fff;
+  box-shadow:0 2px 8px #0000000d;font-size:20px;line-height:1;color:var(--green-d);
+  display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.top h1{font-size:19px;margin:0;flex:1;font-weight:800;letter-spacing:.5px}
+.pill{
+  display:flex;align-items:center;gap:5px;background:#fff;border-radius:999px;
+  padding:7px 13px;font-weight:800;font-size:15px;box-shadow:0 2px 8px #0000000d;flex:0 0 auto;
+}
+.pill.star{color:#c99400}
+.pill.bone{color:#b57a2d}
+
+/* 主区 */
+main{flex:1;padding:6px 16px 40px}
+.card{
+  background:var(--card);border-radius:24px;padding:22px;
+  box-shadow:0 6px 20px #2f423408;margin-bottom:14px;
+}
+
+/* 首页地图 */
+.hero{
+  background:linear-gradient(135deg,#e6f8ea,#fff0f4);
+  border-radius:26px;padding:22px;margin:6px 0 16px;position:relative;overflow:hidden;
+}
+.hero h2{margin:0 0 6px;font-size:22px}
+.hero p{margin:0;color:var(--muted);font-size:14.5px;line-height:1.6}
+.pet{position:absolute;right:14px;top:14px;font-size:52px;animation:float 2.6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+.unit{
+  display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;
+  padding:16px;margin-bottom:12px;box-shadow:0 4px 14px #2f42340a;
+  border:2px solid transparent;transition:transform .15s;
+}
+.unit:active{transform:scale(.985)}
+.unit.locked{opacity:.55;filter:grayscale(.4)}
+.unit .badge{
+  width:58px;height:58px;border-radius:18px;display:flex;align-items:center;justify-content:center;
+  font-size:28px;background:var(--green-l);flex:0 0 auto;
+}
+.unit.m .badge{background:var(--gold-l)}
+.unit .meta{flex:1;min-width:0}
+.unit .meta b{display:block;font-size:17px;margin-bottom:4px}
+.unit .meta small{color:var(--muted);font-size:13px}
+.unit .go{font-size:22px;color:var(--green);flex:0 0 auto}
+
+/* 字卡列表 */
+.chars{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px}
+.charbtn{
+  background:#fff;border-radius:20px;padding:14px 8px;text-align:center;
+  box-shadow:0 4px 14px #2f42340a;position:relative;border:2px solid transparent;
+}
+.charbtn .big{font-size:44px;line-height:1.1;font-weight:700;color:var(--ink)}
+.charbtn .py{font-size:13px;color:var(--muted);margin-top:4px}
+.charbtn.done{background:var(--green-l);border-color:#b7e5c4}
+.charbtn .check{position:absolute;right:8px;top:8px;font-size:15px}
+
+/* 学习步骤 */
+.progress{display:flex;gap:6px;margin-bottom:14px}
+.progress i{flex:1;height:8px;border-radius:99px;background:#e6efe9}
+.progress i.on{background:var(--green)}
+
+.bigchar{font-size:130px;line-height:1;text-align:center;font-weight:700;margin:6px 0}
+.pinyin{text-align:center;font-size:26px;color:var(--green-d);font-weight:700;margin-bottom:10px}
+
+.actions{display:flex;gap:12px;margin-top:18px}
+.btn{
+  flex:1;border:none;border-radius:20px;padding:17px;font-size:18px;font-weight:800;
+  background:var(--green);color:#fff;box-shadow:0 6px 0 #5fae73;transition:transform .08s;
+  font-family:inherit;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 3px 0 #5fae73}
+.btn.ghost{background:#fff;color:var(--green-d);box-shadow:0 4px 0 #dfeae2}
+.btn.ghost:active{box-shadow:0 2px 0 #dfeae2}
+.btn.pink{background:var(--pink);box-shadow:0 6px 0 #e79aae}
+.btn.pink:active{box-shadow:0 3px 0 #e79aae}
+.btn[disabled]{opacity:.5;box-shadow:none}
+
+/* 演变动画 */
+.morphbox{
+  position:relative;height:230px;display:flex;align-items:center;justify-content:center;
+  border-radius:22px;background:linear-gradient(180deg,#fbfffb,#eef9f1);overflow:hidden;
+}
+.morphbox .pic{font-size:96px;position:absolute;transition:opacity .5s,transform .6s}
+.morphbox .pic.out{opacity:0;transform:scale(1.25)}
+.tip{text-align:center;color:var(--muted);font-size:15px;margin-top:10px;line-height:1.6}
+
+/* 描红 */
+.grid-wrap{display:flex;justify-content:center;margin:4px 0 6px}
+svg.tian{
+  width:min(78vw,330px);height:min(78vw,330px);touch-action:none;
+  background:#fff;border-radius:20px;box-shadow:inset 0 0 0 2px #eaf3ec;
+}
+.stroke-done{fill:none;stroke:#7ec98f;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.stroke-guide{fill:none;stroke:#dbe8df;stroke-width:9;stroke-linecap:round;stroke-linejoin:round}
+.stroke-live{fill:none;stroke:#ffb6c8;stroke-width:11;stroke-linecap:round;stroke-linejoin:round}
+.dot{fill:#ff7d9c}
+.trace-hint{text-align:center;font-size:15.5px;color:var(--muted);height:22px;margin-top:4px}
+
+/* 找字 */
+.opts{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:14px}
+.opt{
+  background:#fff;border-radius:22px;padding:22px 10px;font-size:46px;font-weight:700;
+  border:3px solid #eef5ef;box-shadow:0 4px 12px #2f423408;color:var(--ink);font-family:inherit;
+}
+.opt:active{transform:scale(.97)}
+.opt.good{border-color:#7ec98f;background:#e8f8ec;animation:pop .35s}
+.opt.bad{border-color:#ffb6c8;background:#ffeef2;animation:shake .3s}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+/* 数学：数一数 */
+.count-area{
+  display:flex;flex-wrap:wrap;gap:14px;justify-content:center;
+  padding:18px;background:linear-gradient(180deg,#fbfffb,#effaf2);border-radius:22px;
+  min-height:170px;align-items:center;
+}
+.thing{font-size:52px;transition:transform .2s;filter:grayscale(.5);opacity:.55}
+.thing.counted{filter:none;opacity:1;transform:scale(1.12)}
+.numbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:12px;margin-top:16px}
+.numbtn{
+  background:#fff;border-radius:18px;border:3px solid #eef5ef;padding:16px 6px;
+  font-size:32px;font-weight:800;font-family:inherit;color:var(--ink);
+}
+
+/* 结果页 */
+.result{text-align:center;padding:30px 10px}
+.result .big{font-size:76px;animation:pop .5s}
+.result h2{font-size:24px;margin:10px 0 6px}
+.result p{color:var(--muted);margin:0 0 20px}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:32px;transform:translate(-50%,30px);
+  background:#2f4234;color:#fff;padding:13px 22px;border-radius:16px;font-size:15px;
+  opacity:0;transition:.25s;pointer-events:none;z-index:99;max-width:82vw;text-align:center;
+}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* 撒花 */
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:98;overflow:hidden}
+.confetti span{
+  position:absolute;font-size:22px;animation:fall linear forwards;
+}
+@keyframes fall{to{transform:translateY(105vh) rotate(420deg);opacity:0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <button class="back" id="backBtn" aria-label="返回">←</button>
+    <h1 id="title">朵朵闯关</h1>
+    <div class="pill star">⭐ <span id="starNum">0</span></div>
+    <div class="pill bone">🦴 <span id="boneNum">0</span></div>
+  </div>
+  <main id="view"></main>
+</div>
+<div id="toast"></div>
+<script>
+'use strict';
+
+/* ========== 存储 ========== */
+const KEY='kids_level_v1';
+const DEFAULT={stars:0,bones:0,chars:{},math:{},unlocked:1,lastDay:''};
+let S=load();
+function load(){
+  try{ const d=JSON.parse(localStorage.getItem(KEY)||'null'); return Object.assign({},DEFAULT,d||{}); }
+  catch(e){ return Object.assign({},DEFAULT); }
+}
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){} paintTop(); }
+function paintTop(){
+  document.getElementById('starNum').textContent=S.stars;
+  document.getElementById('boneNum').textContent=S.bones;
+}
+
+/* ========== 语音 ========== */
+let voice=null, voicesReady=false;
+function pickVoice(){
+  const vs=speechSynthesis.getVoices()||[];
+  if(!vs.length) return null;
+  const zh=vs.filter(v=>/zh[-_]?CN|Chinese|中文|普通话/i.test(v.lang+' '+v.name));
+  if(!zh.length) return null;
+  const prefer=['Tingting','Ting-Ting','婷婷','美嘉','Meijia','Li-Mu','Google 普通话'];
+  for(const p of prefer){ const hit=zh.find(v=>v.name.includes(p)); if(hit) return hit; }
+  return zh[0];
+}
+function speak(text,rate){
+  if(!('speechSynthesis' in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN';
+    if(!voice) voice=pickVoice();
+    if(voice) u.voice=voice;
+    u.rate=rate||0.85; u.pitch=1.1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+if('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged=()=>{ voice=pickVoice(); voicesReady=true; };
+}
+
+/* ========== 数据 ========== */
+/* 每个字：字形、拼音、组词、笔画（0-100 坐标系折线）、字源说明、配图 */
+const CHARS=[
+  /* ---------- 单元 1：一二三十人 ---------- */
+  {c:'一',unit:1,py:'yī',word:'一个',wEmoji:'🍎',sent:'一个苹果',
+   strokes:[[[18,50],[82,50]]],origin:'一根横着的木棍，就是「一」'},
+  {c:'二',unit:1,py:'èr',word:'两只',wEmoji:'🐰',sent:'两只小兔子',
+   strokes:[[[26,38],[74,38]],[[20,64],[80,64]]],origin:'两根木棍叠在一起，就是「二」'},
+  {c:'三',unit:1,py:'sān',word:'三个',wEmoji:'⭐',sent:'三颗星星',
+   strokes:[[[30,30],[70,30]],[[24,50],[76,50]],[[18,70],[82,70]]],origin:'三根木棍叠在一起，就是「三」'},
+  {c:'十',unit:1,py:'shí',word:'十个',wEmoji:'🖐️',sent:'十个手指头',
+   strokes:[[[20,50],[80,50]],[[50,18],[50,82]]],origin:'一横一竖交叉，像十字路口，就是「十」'},
+  {c:'人',unit:1,py:'rén',word:'大人',wEmoji:'🧍',sent:'大人和小孩',
+   strokes:[[[57,17],[50,44],[31,82]],[[48,45],[60,64],[74,81]]],
+   origin:'先写撇，再从撇的中间起笔写捺，就是「人」'},
+
+  /* ---------- 单元 2：口日山土木大小上 ---------- */
+  {c:'口',unit:2,py:'kǒu',word:'开口',wEmoji:'👄',sent:'张开嘴巴',strokes:[
+    [[30,24],[30,78]],[[30,24],[72,24],[72,78]],[[30,78],[72,78]]],
+   origin:'一张张开的嘴巴，就是「口」'},
+  {c:'日',unit:2,py:'rì',word:'日子',wEmoji:'☀️',sent:'太阳出来了',strokes:[
+    [[30,20],[30,80]],[[30,20],[72,20],[72,80]],[[30,50],[72,50]],[[30,80],[72,80]]],
+   origin:'太阳圆圆的，中间再加一横，就是「日」'},
+  {c:'山',unit:2,py:'shān',word:'大山',wEmoji:'⛰️',sent:'高高的山',strokes:[
+    [[50,22],[50,80]],[[24,40],[24,80],[76,80]],[[76,32],[76,80]]],
+   origin:'三座山峰连在一起，就是「山」'},
+  {c:'土',unit:2,py:'tǔ',word:'泥土',wEmoji:'🌱',sent:'土里长小苗',strokes:[
+    [[28,30],[72,30]],[[50,30],[50,80]],[[22,80],[78,80]]],
+   origin:'地上长出一棵小苗，就是「土」'},
+  {c:'木',unit:2,py:'mù',word:'木头',wEmoji:'🌳',sent:'一棵大树',strokes:[
+    [[24,36],[76,36]],[[50,20],[50,84]],[[50,36],[30,80]],[[50,36],[72,80]]],
+   origin:'一棵树：上面是枝，中间是干，下面是根，就是「木」'},
+  {c:'大',unit:2,py:'dà',word:'大人',wEmoji:'🙆',sent:'张开手和脚',strokes:[
+    [[24,34],[76,34]],[[52,16],[30,84]],[[52,16],[74,80]]],
+   origin:'一个人张开双手双脚，就是「大」'},
+  {c:'小',unit:2,py:'xiǎo',word:'小心',wEmoji:'🐜',sent:'小小的蚂蚁',strokes:[
+    [[50,26],[50,76],[57,70]],[[32,32],[26,52]],[[70,32],[75,52]]],
+   origin:'三个小小的笔画，表示很小很小，就是「小」'},
+  {c:'上',unit:2,py:'shàng',word:'上面',wEmoji:'⬆️',sent:'在上面',strokes:[
+    [[50,24],[50,64]],[[37,64],[63,64]],[[24,82],[76,82]]],
+   origin:'一条线上面有个记号，表示「上」'}
+];
+const MATH=[
+  {id:'count',unit:1,name:'数一数',emoji:'🔢',tip:'点一点，数到几就是几'},
+  {id:'more', unit:1,name:'比多少',emoji:'⚖️',tip:'哪边多，就点哪边'},
+  {id:'add',  unit:1,name:'3以内加法',emoji:'➕',tip:'合起来是几？'},
+  {id:'add5', unit:2,name:'5以内加法',emoji:'➕',tip:'合起来是几？'},
+  {id:'sub5', unit:2,name:'5以内减法',emoji:'➖',tip:'拿走几个还剩几个？'},
+  {id:'shape',unit:2,name:'认识形状',emoji:'🔺',tip:'这是什么形状？'}
+];
+const unitChars=u=>CHARS.filter(c=>c.unit===u);
+const unitMath=u=>MATH.filter(m=>m.unit===u);
+const charsDone=u=>unitChars(u).filter(c=>S.chars[c.c]).length;
+const mathOKCount=u=>unitMath(u).filter(m=>S.math[m.id]).length;
+const unit1CharsOK=()=>charsDone(1)>=unitChars(1).length;
+const unit1MathOK=()=>mathOKCount(1)>=unitMath(1).length;
+
+/* ========== 通用 UI ========== */
+const view=document.getElementById('view');
+const titleEl=document.getElementById('title');
+const backBtn=document.getElementById('backBtn');
+let nav=[];
+function toast(msg,ms){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('on'), ms||1600);
+}
+function confetti(){
+  const box=document.createElement('div'); box.className='confetti';
+  const emo=['⭐','🎉','🌟','💛','🍬','🦴'];
+  for(let i=0;i<26;i++){
+    const s=document.createElement('span');
+    s.textContent=emo[i%emo.length];
+    s.style.left=(Math.random()*100)+'%';
+    s.style.top=(-10-Math.random()*20)+'px';
+    s.style.animationDuration=(1.4+Math.random()*1.4)+'s';
+    s.style.animationDelay=(Math.random()*.4)+'s';
+    box.appendChild(s);
+  }
+  document.body.appendChild(box);
+  setTimeout(()=>box.remove(),3200);
+}
+function go(fn,opts){
+  nav.push(current);
+  current=fn; renderFn=opts&&opts.render;
+  render();
+}
+let current='home', renderFn=null;
+
+/* ========== 首页 ========== */
+function renderHome(){
+  titleEl.textContent='朵朵闯关';
+  const c1=charsDone(1), c2=charsDone(2), m1=mathOKCount(1), m2=mathOKCount(2);
+  const n1=unitChars(1).length, n2=unitChars(2).length, p1=unitMath(1).length, p2=unitMath(2).length;
+  const lockC2=!unit1CharsOK(), lockM2=!unit1MathOK();
+  const total=S.stars;
+  view.innerHTML=`
+  <div class="hero">
+    <div class="pet">🐰</div>
+    <h2>小班 · 闯关中</h2>
+    <p>${unit1CharsOK()&&unit1MathOK()?'第一单元全部完成，第二单元已解锁 🎉':'一关一关来，学完就解锁下一关'}<br>已得 ${total} 颗星星</p>
+  </div>
+
+  <div class="sec">识字</div>
+  <div class="unit ${c1>=n1?'ok':''}" id="u1">
+    <div class="badge">📖</div>
+    <div class="meta"><b>第一单元 · 一二三十人</b><small>${c1} / ${n1} 个字${c1>=n1?' · 已通关':''}</small></div>
+    <div class="go">${c1>=n1?'✅':'›'}</div>
+  </div>
+  <div class="unit ${lockC2?'locked':''}" id="u2">
+    <div class="badge">${lockC2?'🔒':'📖'}</div>
+    <div class="meta"><b>第二单元 · 口日山土木大小上</b><small>${lockC2?'学完第一单元的 5 个字解锁':`${c2} / ${n2} 个字${c2>=n2?' · 已通关':''}`}</small></div>
+    <div class="go">${lockC2?'🔒':(c2>=n2?'✅':'›')}</div>
+  </div>
+
+  <div class="sec">数学</div>
+  <div class="unit m ${m1>=p1?'ok':''}" id="m1">
+    <div class="badge">🔢</div>
+    <div class="meta"><b>第一单元 · 数一数 / 比多少 / 3以内加法</b><small>${m1} / ${p1} 关${m1>=p1?' · 已通关':''}</small></div>
+    <div class="go">${m1>=p1?'✅':'›'}</div>
+  </div>
+  <div class="unit m ${lockM2?'locked':''}" id="m2">
+    <div class="badge">${lockM2?'🔒':'➕'}</div>
+    <div class="meta"><b>第二单元 · 5以内加减 / 认识形状</b><small>${lockM2?'把第一单元 3 关过完就解锁':`${m2} / ${p2} 关${m2>=p2?' · 已通关':''}`}</small></div>
+    <div class="go">${lockM2?'🔒':(m2>=p2?'✅':'›')}</div>
+  </div>
+`;
+
+  document.getElementById('u1').onclick=()=>openChars(1);
+  document.getElementById('u2').onclick=()=>{
+    if(lockC2){ toast('先把第一单元 5 个字学完 🐰'); return; }
+    openChars(2);
+  };
+  document.getElementById('m1').onclick=()=>openMath(1);
+  document.getElementById('m2').onclick=()=>{
+    if(lockM2){ toast('先把数学第一单元 3 关过完'); return; }
+    openMath(2);
+  };
+}
+
+/* ========== 识字列表 ========== */
+let UNIT=1;
+function openChars(u){ UNIT=u; go('chars'); }
+function renderChars(){
+  const list=unitChars(UNIT);
+  const done=list.filter(x=>S.chars[x.c]).length;
+  titleEl.textContent='识字 · 第'+(UNIT===1?'一':'二')+'单元';
+  view.innerHTML=`
+    <div class="card">
+      <div style="font-size:15px;color:var(--muted);margin-bottom:12px">点一个字开始学（已学会 ${done}/${list.length}）</div>
+      <div class="chars">
+        ${list.map(ch=>`
+          <div class="charbtn ${S.chars[ch.c]?'done':''}" data-c="${ch.c}">
+            ${S.chars[ch.c]?'<div class="check">⭐</div>':''}
+            <div class="big">${ch.c}</div>
+            <div class="py">${ch.py}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:44px;margin-bottom:8px">🐰</div>
+      <div style="color:var(--muted);font-size:14.5px;line-height:1.6">每个字 5 步：看演变 → 听读音 → 学组词 → 描红 → 找字<br>学完这一单元，下一单元自动解锁</div>
+    </div>`;
+  view.querySelectorAll('.charbtn').forEach(el=>{
+    el.onclick=()=>{ const ch=CHARS.find(x=>x.c===el.dataset.c); if(ch) startChar(ch); };
+  });
+}
+
+/* ========== 学一个字 ========== */
+let C=null, step=0;
+const STEPS=['demo','sound','word','trace','find'];
+
+function startChar(ch){
+  C={ch, pts:[], strokeIdx:0};
+  step=0;
+  go('char');
+}
+function renderChar(){
+  const ch=C.ch;
+  titleEl.textContent='学「'+ch.c+'」';
+  const pcts=STEPS.map((_,i)=>`<i class="${i<=step?'on':''}"></i>`).join('');
+  let body='';
+  if(step===0) body=htmlDemo(ch);
+  else if(step===1) body=htmlSound(ch);
+  else if(step===2) body=htmlWord(ch);
+  else if(step===3) body=htmlTrace(ch);
+  else body=htmlFind(ch);
+  view.innerHTML=`<div class="progress">${pcts}</div>${body}`;
+
+  if(step===0) wiringDemo(ch);
+  if(step===1) wiringSound(ch);
+  if(step===2) wiringWord(ch);
+  if(step===3) wiringTrace(ch);
+  if(step===4) wiringFind(ch);
+}
+function nextStep(){
+  if(step<STEPS.length-1){ step++; render(); }
+  else finishChar();
+}
+
+/* --- 步骤1：字形演变 --- */
+function htmlDemo(ch){
+  return `
+  <div class="card">
+    <div class="morphbox">
+      <div class="pic" id="pic">${ch.c==='人'?'🧍':ch.c==='十'?'➕':'📏'}</div>
+      <div class="pic" id="pic2" style="opacity:0;font-size:150px;font-weight:700;color:var(--ink)">${ch.c}</div>
+    </div>
+    <div class="tip" id="tipTxt">${ch.origin}</div>
+    <div class="actions">
+      <button class="btn" id="playBtn">▶ 再看一次</button>
+      <button class="btn ghost" id="nextBtn">下一步</button>
+    </div>
+  </div>`;
+}
+function wiringDemo(ch){
+  const pic=document.getElementById('pic'), pic2=document.getElementById('pic2');
+  const play=()=>{
+    pic.style.opacity='1'; pic.style.transform='scale(1)';
+    pic2.style.opacity='0'; pic2.style.transform='scale(.6)';
+    speak(ch.c,0.7);
+    setTimeout(()=>{ pic.classList.add('out'); pic2.style.opacity='1'; pic2.style.transform='scale(1)'; },900);
+    setTimeout(()=>{ pic.classList.remove('out'); pic.style.opacity='0'; },2400);
+  };
+  document.getElementById('playBtn').onclick=play;
+  document.getElementById('nextBtn').onclick=nextStep;
+  setTimeout(play,350);
+}
+
+/* --- 步骤2：听读音 --- */
+function htmlSound(ch){
+  return `
+  <div class="card" style="text-align:center">
+    <div class="bigchar">${ch.c}</div>
+    <div class="pinyin">${ch.py}</div>
+    <button class="btn pink" id="speakBtn" style="max-width:280px;margin:0 auto 6px">🔊 点我听一听</button>
+    <div class="tip">跟着读一遍：${ch.py}</div>
+    <div class="actions">
+      <button class="btn ghost" id="prevBtn">上一步</button>
+      <button class="btn" id="nextBtn">我读会了</button>
+    </div>
+  </div>`;
+}
+function wiringSound(ch){
+  const b=document.getElementById('speakBtn');
+  b.onclick=()=>speak(ch.c+'，'+ch.py.replace(/[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/g,m=>m),0.7);
+  document.getElementById('prevBtn').onclick=()=>{ step=0; render(); };
+  document.getElementById('nextBtn').onclick=nextStep;
+  setTimeout(()=>speak(ch.c,0.7),400);
+}
+
+/* --- 步骤3：组词 --- */
+function htmlWord(ch){
+  return `
+  <div class="card" style="text-align:center">
+    <div style="font-size:80px;margin:6px 0 4px">${ch.wEmoji}</div>
+    <div class="pinyin" style="margin-bottom:4px">${ch.word}</div>
+    <div style="font-size:17px;color:var(--muted);margin-bottom:14px">${ch.sent}</div>
+    <button class="btn pink" id="speakBtn" style="max-width:280px;margin:0 auto">🔊 听词语</button>
+    <div class="actions">
+      <button class="btn ghost" id="prevBtn">上一步</button>
+      <button class="btn" id="nextBtn">记住了</button>
+    </div>
+  </div>`;
+}
+function wiringWord(ch){
+  document.getElementById('speakBtn').onclick=()=>speak(ch.word+'，'+ch.sent,0.8);
+  document.getElementById('prevBtn').onclick=()=>{ step=1; render(); };
+  document.getElementById('nextBtn').onclick=nextStep;
+  setTimeout(()=>speak(ch.word,0.8),400);
+}
+
+/* --- 步骤4：描红 --- */
+function htmlTrace(ch){
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:16px;color:var(--muted);margin-bottom:8px">
+      按笔顺，用手指把字描一遍
+    </div>
+    <div class="grid-wrap">
+      <svg class="tian" id="tian" viewBox="0 0 100 100">
+        <line x1="50" y1="4" x2="50" y2="96" stroke="#eef5ef" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="4" y1="50" x2="96" y2="50" stroke="#eef5ef" stroke-width="1" stroke-dasharray="3 3"/>
+        <g id="guides"></g>
+        <g id="doneLayer"></g>
+        <polyline id="live" class="stroke-live" points="" style="opacity:0"/>
+        <circle id="startDot" class="dot" r="6" cx="0" cy="0" style="opacity:0"/>
+      </svg>
+    </div>
+    <div class="trace-hint" id="hint">从粉色圆点开始</div>
+    <div style="text-align:center;margin-top:2px">
+      <button id="demoBtn" style="border:none;background:#eef8f1;color:#4a8f5e;font-weight:800;
+        font-size:14.5px;padding:9px 16px;border-radius:999px;font-family:inherit">▶ 看笔顺演示</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="resetBtn">重来</button>
+      <button class="btn" id="nextBtn" disabled>下一步</button>
+    </div>
+  </div>`;
+}
+function resample(pts,stepLen){
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){
+    const [x1,y1]=pts[i],[x2,y2]=pts[i+1];
+    const d=Math.hypot(x2-x1,y2-y1);
+    const n=Math.max(1,Math.round(d/stepLen));
+    for(let k=0;k<n;k++) out.push([x1+(x2-x1)*k/n, y1+(y2-y1)*k/n]);
+  }
+  out.push(pts[pts.length-1]);
+  return out;
+}
+function wiringTrace(ch){
+  const svg=document.getElementById('tian');
+  const guides=document.getElementById('guides');
+  const doneLayer=document.getElementById('doneLayer');
+  const live=document.getElementById('live');
+  const dot=document.getElementById('startDot');
+  const hint=document.getElementById('hint');
+  const nextBtn=document.getElementById('nextBtn');
+
+  // 画引导（浅灰）
+  ch.strokes.forEach(st=>{
+    const p=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+    p.setAttribute('points', st.map(([x,y])=>x+','+y).join(' '));
+    p.setAttribute('class','stroke-guide');
+    guides.appendChild(p);
+  });
+
+  let si=0, samples=resample(ch.strokes[0],3), prog=0, tracing=false, pts=[];
+  function showDot(){
+    const [x,y]=samples[Math.min(prog,samples.length-1)];
+    dot.setAttribute('cx',x); dot.setAttribute('cy',y); dot.style.opacity='1';
+  }
+  function toSvg(e){
+    const r=svg.getBoundingClientRect();
+    const cx=(e.touches?e.touches[0].clientX:e.clientX);
+    const cy=(e.touches?e.touches[0].clientY:e.clientY);
+    return [ (cx-r.left)/r.width*100, (cy-r.top)/r.height*100 ];
+  }
+  function dist(a,b){ return Math.hypot(a[0]-b[0],a[1]-b[1]); }
+
+  function start(e){
+    e.preventDefault();
+    const p=toSvg(e);
+    if(dist(p,samples[0])>16){ hint.textContent='从这个粉点开始描哦'; return; }
+    tracing=true; prog=0; pts=[p];
+    live.setAttribute('points', p[0]+','+p[1]);
+    live.style.opacity='1';
+    dot.style.opacity='0';
+    hint.textContent='顺着灰线慢慢描';
+  }
+  function move(e){
+    if(!tracing) return;
+    e.preventDefault();
+    const p=toSvg(e);
+    const last=pts[pts.length-1];
+    if(dist(p,last)<0.6) return;
+    pts.push(p);
+    live.setAttribute('points', pts.map(q=>q[0]+','+q[1]).join(' '));
+    // 找最近的采样点（只能向前）
+    let best=prog, bestD=1e9;
+    for(let k=prog;k<Math.min(prog+14,samples.length);k++){
+      const d=dist(p,samples[k]);
+      if(d<bestD){ bestD=d; best=k; }
+    }
+    if(bestD>11){
+      // 偏太远：这一笔重来（温和提示，不惩罚）
+      tracing=false; pts=[]; live.style.opacity='0';
+      hint.textContent='描偏啦，再试一次（不扣星星）';
+      showDot(); prog=0;
+      return;
+    }
+    prog=best;
+    if(prog>=samples.length-2){
+      // 完成一笔
+      const pl=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      pl.setAttribute('points', ch.strokes[si].map(([x,y])=>x+','+y).join(' '));
+      pl.setAttribute('class','stroke-done');
+      doneLayer.appendChild(pl);
+      live.style.opacity='0'; pts=[]; tracing=false;
+      si++;
+      if(si>=ch.strokes.length){
+        dot.style.opacity='0';
+        hint.textContent='太棒了！这个字你写出来了 ✨';
+        nextBtn.disabled=false;
+        speak('写得真好',0.9);
+      }else{
+        samples=resample(ch.strokes[si],3); prog=0; showDot();
+        hint.textContent='第 '+(si+1)+' 笔，继续';
+      }
+    }
+  }
+  function end(){ if(tracing){ tracing=false; live.style.opacity='0'; pts=[]; if(prog<samples.length-2){ hint.textContent='再描一次，要描到头'; showDot(); prog=0; } } }
+
+  svg.addEventListener('mousedown',start);
+  svg.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  svg.addEventListener('touchstart',start,{passive:false});
+  svg.addEventListener('touchmove',move,{passive:false});
+  svg.addEventListener('touchend',end);
+
+  // 笔顺演示：按顺序把每一笔"写"出来
+  function playStrokes(){
+    guides.style.opacity='0.35';
+    const ghosts=[];
+    ch.strokes.forEach(st=>{
+      const el=document.createElementNS('http://www.w3.org/2000/svg','polyline');
+      el.setAttribute('points', st.map(([x,y])=>x+','+y).join(' '));
+      el.setAttribute('fill','none');
+      el.setAttribute('stroke','#ff9db4');
+      el.setAttribute('stroke-width','9');
+      el.setAttribute('stroke-linecap','round');
+      el.setAttribute('stroke-linejoin','round');
+      doneLayer.appendChild(el);
+      ghosts.push(el);
+    });
+    let i=0;
+    const runNext=()=>{
+      if(i>=ghosts.length){ setTimeout(()=>{ doneLayer.querySelectorAll('polyline').forEach(e=>e.remove()); guides.style.opacity='1'; },420); return; }
+      const el=ghosts[i];
+      let len=0;
+      try{ len=el.getTotalLength(); }catch(e){ len=200; }
+      el.style.strokeDasharray=len+' '+len;
+      el.style.strokeDashoffset=len;
+      el.getBoundingClientRect();
+      el.style.transition='stroke-dashoffset .55s linear';
+      el.style.strokeDashoffset='0';
+      i++;
+      setTimeout(runNext,700);
+    };
+    runNext();
+  }
+  document.getElementById('demoBtn').onclick=playStrokes;
+
+  document.getElementById('resetBtn').onclick=()=>{ render(); };
+  nextBtn.onclick=nextStep;
+  showDot();
+}
+
+/* --- 步骤5：找字 --- */
+function htmlFind(ch){
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:4px">哪个是「<b style="color:var(--green-d)">${ch.c}</b>」？</div>
+    <div style="text-align:center;color:var(--muted);font-size:14px">（${ch.py}）</div>
+    <div class="opts" id="opts"></div>
+  </div>`;
+}
+function wiringFind(ch){
+  const pool=CHARS.filter(x=>x.c!==ch.c).map(x=>x.c);
+  const opts=[ch.c];
+  while(opts.length<4){
+    const cand=pool[Math.floor(Math.random()*pool.length)];
+    if(!opts.includes(cand)) opts.push(cand);
+  }
+  opts.sort(()=>Math.random()-0.5);
+  const box=document.getElementById('opts');
+  box.innerHTML=opts.map(c=>`<button class="opt" data-c="${c}">${c}</button>`).join('');
+  box.querySelectorAll('.opt').forEach(el=>{
+    el.onclick=()=>{
+      if(el.dataset.c===ch.c){
+        el.classList.add('good');
+        speak('答对啦',0.9);
+        setTimeout(()=>finishChar(),650);
+      }else{
+        el.classList.add('bad');
+        speak('再看看',0.9);
+        setTimeout(()=>el.classList.remove('bad'),400);
+      }
+    };
+  });
+  setTimeout(()=>speak('哪个是'+ch.c,0.8),350);
+}
+
+/* --- 完成一个字 --- */
+function finishChar(){
+  const ch=C.ch;
+  const first=!S.chars[ch.c];
+  if(first){ S.chars[ch.c]=true; S.stars+=1; S.bones+=2; save(); }
+  confetti();
+  titleEl.textContent='学会啦';
+  const list=unitChars(ch.unit);
+  const done=list.filter(x=>S.chars[x.c]).length;
+  const nextCh=list.find(x=>!S.chars[x.c]);
+  view.innerHTML=`
+    <div class="card result">
+      <div class="big">${first?'⭐':'🎉'}</div>
+      <h2>${first?'学会「'+ch.c+'」啦！':'又练了一遍「'+ch.c+'」'}</h2>
+      <p>本单元 ${done}/${list.length} 个字 · 已得 ${S.stars} 颗星星</p>
+      <div class="actions">
+        <button class="btn ghost" id="againBtn">再写一遍</button>
+        <button class="btn" id="homeBtn">${nextCh?'学下一个':'回首页'}</button>
+      </div>
+    </div>`;
+  document.getElementById('againBtn').onclick=()=>{ startChar(ch); };
+  document.getElementById('homeBtn').onclick=()=>{
+    if(nextCh){ startChar(nextCh); } else { go('home'); }
+  };
+  speak(first?'学会啦':'真棒',0.9);
+}
+
+/* ========== 数学 ========== */
+let MATH_UNIT=1;
+function openMath(u){ MATH_UNIT=u; go('math'); }
+function renderMath(){
+  const list=unitMath(MATH_UNIT);
+  titleEl.textContent='数学 · 第'+(MATH_UNIT===1?'一':'二')+'单元';
+  view.innerHTML=`
+    <div class="card">
+      <div style="font-size:15px;color:var(--muted);margin-bottom:12px">一关一关来，每关 3 题</div>
+      ${list.map((m,i)=>{
+        const locked=i>0 && !S.math[list[i-1].id];
+        return `
+        <div class="unit ${locked?'locked':''}" data-i="${i}">
+          <div class="badge">${locked?'🔒':m.emoji}</div>
+          <div class="meta"><b>${m.name}</b><small>${locked?'先过上一关':m.tip}</small></div>
+          <div class="go">${S.math[m.id]?'⭐':'›'}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  view.querySelectorAll('.unit').forEach(el=>{
+    el.onclick=()=>{
+      const i=+el.dataset.i;
+      if(i>0 && !S.math[list[i-1].id]){ toast('先把上一关过了'); return; }
+      startMath(i);
+    };
+  });
+}
+
+let M=null;
+function startMath(i){ M={idx:i,round:0}; go('mathplay'); }
+
+function renderMathPlay(){
+  const m=unitMath(MATH_UNIT)[M.idx];
+  titleEl.textContent=m.name;
+  let body='';
+  if(m.id==='count') body=htmlCount();
+  else if(m.id==='more') body=htmlMore();
+  else if(m.id==='add') body=htmlAdd(3);
+  else if(m.id==='add5') body=htmlAdd(5);
+  else if(m.id==='sub5') body=htmlSub();
+  else body=htmlShape();
+  view.innerHTML=body;
+  if(m.id==='count') wiringCount();
+  else if(m.id==='more') wiringMore();
+  else if(m.id==='add'||m.id==='add5') wiringAdd();
+  else if(m.id==='sub5') wiringSub();
+  else wiringShape();
+}
+
+/* 数一数 */
+function htmlCount(){
+  const max=MATH_UNIT===1?3:5;
+  const n=1+Math.floor(Math.random()*max);
+  M.n=n; M.counted=0;
+  const emo=['🍎','🐤','🌸','🍓','🐟'][Math.floor(Math.random()*5)];
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:10px">数一数，有几个？</div>
+    <div class="count-area" id="area">
+      ${Array.from({length:n}).map(()=>`<div class="thing">${emo}</div>`).join('')}
+    </div>
+    <div style="text-align:center;color:var(--muted);font-size:14px;margin-top:10px" id="cnt">点一下，数一个</div>
+    <div class="numbtns" id="nums">
+      ${Array.from({length:max}).map((_,k)=>`<button class="numbtn" data-n="${k+1}">${k+1}</button>`).join('')}
+    </div>
+  </div>`;
+}
+function wiringCount(){
+  const area=document.getElementById('area'), cnt=document.getElementById('cnt');
+  area.querySelectorAll('.thing').forEach(el=>{
+    el.onclick=()=>{
+      if(el.classList.contains('counted')) return;
+      el.classList.add('counted'); M.counted++;
+      speak(String(M.counted),0.8); cnt.textContent='数到 '+M.counted;
+    };
+  });
+  document.querySelectorAll('.numbtn').forEach(b=>{
+    b.onclick=()=>{
+      if(+b.dataset.n===M.n){ b.style.background='#e8f8ec'; mathPass(); }
+      else { b.classList.add('bad'); toast('再数一遍试试'); setTimeout(()=>b.classList.remove('bad'),400); }
+    };
+  });
+}
+
+/* 比多少 */
+function htmlMore(){
+  const max=MATH_UNIT===1?3:5;
+  const rnd=()=>1+Math.floor(Math.random()*max);
+  let a=rnd(), b=rnd();
+  while(a===b) b=rnd();
+  M.side=a>b?'l':'r';
+  const e1='🍓', e2='🍇';
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:12px">哪边多？点一下</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div id="left" style="background:#fff7f9;border-radius:20px;padding:18px;text-align:center;font-size:34px;line-height:1.5;border:3px solid #ffe3ea">${Array.from({length:a}).map(()=>e1).join(' ')}</div>
+      <div id="right" style="background:#f3fbf5;border-radius:20px;padding:18px;text-align:center;font-size:34px;line-height:1.5;border:3px solid #dff0e5">${Array.from({length:b}).map(()=>e2).join(' ')}</div>
+    </div>
+    <div class="tip" style="margin-top:12px">先数一数每边有几个</div>
+  </div>`;
+}
+function wiringMore(){
+  const L=document.getElementById('left'), R=document.getElementById('right');
+  const pick=(side,el)=>{
+    if(side===M.side){ el.style.borderColor='#7ec98f'; el.style.background='#e8f8ec'; speak('对啦',0.9); mathPass(); }
+    else { el.classList.add('bad'); toast('再数一数'); setTimeout(()=>el.classList.remove('bad'),400); }
+  };
+  L.onclick=()=>pick('l',L);
+  R.onclick=()=>pick('r',R);
+}
+
+/* 加法（max=3 或 5） */
+function htmlAdd(max){
+  const a=1+Math.floor(Math.random()*Math.min(2,max-1));
+  const b=1+Math.floor(Math.random()*(max-a));
+  M.ans=a+b;
+  const opt=[M.ans];
+  while(opt.length<3){ const k=1+Math.floor(Math.random()*max); if(!opt.includes(k)) opt.push(k); }
+  opt.sort(()=>Math.random()-0.5);
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:10px">合起来是几？</div>
+    <div style="display:flex;justify-content:center;align-items:center;gap:10px;font-size:30px;margin:10px 0 6px">
+      <span>${Array.from({length:a}).map(()=>'🍊').join('')}</span>
+      <span style="font-size:24px;color:var(--muted)">+</span>
+      <span>${Array.from({length:b}).map(()=>'🍊').join('')}</span>
+    </div>
+    <div style="text-align:center;font-size:26px;font-weight:800;margin-bottom:12px">${a} + ${b} = ?</div>
+    <div class="numbtns" id="nums">
+      ${opt.map(k=>`<button class="numbtn" data-n="${k}">${k}</button>`).join('')}
+    </div>
+  </div>`;
+}
+function wiringAdd(){
+  document.querySelectorAll('.numbtn').forEach(b=>{
+    b.onclick=()=>{
+      if(+b.dataset.n===M.ans){ b.style.background='#e8f8ec'; mathPass(); }
+      else { b.classList.add('bad'); toast('把两堆合起来数一数'); setTimeout(()=>b.classList.remove('bad'),400); }
+    };
+  });
+}
+
+/* 5以内减法 */
+function htmlSub(){
+  const a=2+Math.floor(Math.random()*3);      // 2..4
+  const b=1+Math.floor(Math.random()*a);      // 1..a
+  M.ans=a-b; M.a=a; M.b=b;
+  const opt=[M.ans];
+  while(opt.length<3){ const k=0+Math.floor(Math.random()*5); if(!opt.includes(k)) opt.push(k); }
+  opt.sort(()=>Math.random()-0.5);
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:10px">拿走 ${b} 个，还剩几个？</div>
+    <div style="display:flex;justify-content:center;gap:6px;font-size:30px;margin:12px 0">
+      ${Array.from({length:a}).map((_,i)=>`<span style="opacity:${i<a-b?1:.25};text-decoration:${i<a-b?'none':'line-through'}">🍪</span>`).join('')}
+    </div>
+    <div style="text-align:center;font-size:26px;font-weight:800;margin-bottom:12px">${a} − ${b} = ?</div>
+    <div class="numbtns" id="nums">
+      ${opt.map(k=>`<button class="numbtn" data-n="${k}">${k}</button>`).join('')}
+    </div>
+  </div>`;
+}
+function wiringSub(){
+  document.querySelectorAll('.numbtn').forEach(b=>{
+    b.onclick=()=>{
+      if(+b.dataset.n===M.ans){ b.style.background='#e8f8ec'; mathPass(); }
+      else { b.classList.add('bad'); toast('数数还剩几个'); setTimeout(()=>b.classList.remove('bad'),400); }
+    };
+  });
+}
+
+/* 认识形状 */
+const SHAPES=[
+  {name:'圆形',icon:'⚪',svg:'<circle cx="60" cy="60" r="44"/>'},
+  {name:'正方形',icon:'🟦',svg:'<rect x="18" y="18" width="84" height="84" rx="4"/>'},
+  {name:'三角形',icon:'🔺',svg:'<polygon points="60,14 108,104 12,104"/>'},
+  {name:'长方形',icon:'▭',svg:'<rect x="8" y="30" width="104" height="60" rx="4"/>'}
+];
+function htmlShape(){
+  const pick=SHAPES[Math.floor(Math.random()*SHAPES.length)];
+  M.shape=pick.name;
+  const others=SHAPES.filter(x=>x.name!==pick.name).sort(()=>Math.random()-0.5).slice(0,2);
+  const opts=[pick,...others].sort(()=>Math.random()-0.5);
+  return `
+  <div class="card">
+    <div style="text-align:center;font-size:17px;margin-bottom:6px">这是什么形状？</div>
+    <svg viewBox="0 0 120 120" style="width:150px;height:150px;display:block;margin:8px auto" fill="#ffd9a0" stroke="#e9a94f" stroke-width="3">${pick.svg}</svg>
+    <div class="numbtns" id="nums" style="gap:10px">
+      ${opts.map(o=>`<button class="numbtn" data-n="${o.name}" style="font-size:19px;min-width:92px">${o.name}</button>`).join('')}
+    </div>
+  </div>`;
+}
+function wiringShape(){
+  document.querySelectorAll('.numbtn').forEach(b=>{
+    b.onclick=()=>{
+      if(b.dataset.n===M.shape){ b.style.background='#e8f8ec'; speak('对啦',0.9); mathPass(); }
+      else { b.classList.add('bad'); toast('再看看它的边和角'); setTimeout(()=>b.classList.remove('bad'),400); }
+    };
+  });
+}
+
+function mathPass(){
+  M.round++;
+  if(M.round>=3){ mathDone(); return; }
+  toast('第 '+M.round+' 题对啦，继续',1200);
+  setTimeout(()=>{ renderMathPlay(); },700);
+}
+function mathDone(){
+  const m=unitMath(MATH_UNIT)[M.idx];
+  const first=!S.math[m.id];
+  if(first){ S.math[m.id]=true; S.stars+=1; S.bones+=3; save(); }
+  confetti();
+  titleEl.textContent='通关';
+  view.innerHTML=`
+    <div class="card result">
+      <div class="big">${first?'🌟':'🎉'}</div>
+      <h2>「${m.name}」通关！</h2>
+      <p>${first?'获得 1 颗星星 + 3 根骨头':'又练了一遍，真棒'}</p>
+      <div class="actions">
+        <button class="btn ghost" id="againBtn">再练一次</button>
+        <button class="btn" id="homeBtn">回首页</button>
+      </div>
+    </div>`;
+  document.getElementById('againBtn').onclick=()=>startMath(M.idx);
+  document.getElementById('homeBtn').onclick=()=>go('home');
+  speak('太厉害了',0.9);
+}
+
+/* ========== 路由 ========== */
+const ROUTES={
+  home:renderHome, chars:renderChars, char:renderChar,
+  math:renderMath, mathplay:renderMathPlay
+};
+function render(){ (ROUTES[current]||renderHome)(); paintTop(); }
+backBtn.onclick=()=>{
+  if(current==='home'){ return; }
+  if(current==='char'){ go('chars'); return; }
+  if(current==='mathplay'){ go('math'); return; }
+  go('home');
+};
+render();
+</script>
+</body>
+</html>
