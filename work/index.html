@@ -1048,13 +1048,13 @@ function renderQuiz(){
     <div class="bar" style="margin-bottom:16px"><i style="width:${pct}%"></i></div>
     <div class="learn-card">
       <div class="q-head"><span class="pill">${q.type||'练习'}</span>
-        <button class="speak-btn" onclick="speak('${esc(q.speakText||q.prompt)}','${q.speakText?'en-US':'zh-CN'}')">${q.speakText?'🔊 再听一遍':'🔊 读题'}</button></div>
+        <button class="speak-btn" onclick="speak('${esc(q.speakText||q.prompt)}','${q.speakLang||(q.speakText?'en-US':'zh-CN')}')">${q.speakText?'🔊 再听一遍':'🔊 读题'}</button></div>
       <div class="q-prompt">${q.prompt}</div>
       ${q.visual?`<div class="q-visual">${q.visual}</div>`:''}
       <div class="options ${cols}">${opts}</div>
       ${q.hint?`<div class="muted" style="margin-top:12px;font-size:13px">${q.hint}</div>`:''}
     </div>`;
-  if(q.speakText) setTimeout(()=>{ try{ speak(q.speakText,'en-US'); }catch(e){} }, 350);
+  if(q.speakText) setTimeout(()=>{ try{ speak(q.speakText, q.speakLang||'en-US'); }catch(e){} }, 350);
 }
 function answer(el, i){
   if(Q.locked) return;
@@ -1163,15 +1163,20 @@ VIEWS.pinyin = ()=>{
     <div class="page-head"><h1>拼音学习</h1><span class="sub">小班：认识 6 个单韵母，听一听、跟着读</span></div>
     <div class="grid g3">
       ${PINYIN.finals.map(f=>`
-        <button class="card center" onclick="speak('${f.l}')">
+        <button class="card center" onclick="pySay('${f.l}','${f.w}')">
           <div style="font-size:40px">${f.em}</div>
           <div style="font-size:44px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${f.l}</div>
           <div class="muted">${f.w}</div>
         </button>`).join('')}
     </div>
-    <div class="card center"><b>四声调小游戏</b><p class="muted">点一点，听听 ā á ǎ à 的不同</p>
-      <div class="row" style="justify-content:center">
-        ${['ā','á','ǎ','à'].map(t=>`<button class="btn ghost" onclick="speak('${t}')">${t}</button>`).join('')}
+    <div class="card center"><b>四声调小游戏</b><p class="muted">点一点，听「妈 麻 马 骂」的四个声调</p>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px">
+        ${[['mā','妈','一声 ˉ 平'],['má','麻','二声 ˊ 扬'],['mǎ','马','三声 ˇ 拐弯'],['mà','骂','四声 ˋ 降']].map(([py,zi,ti])=>`
+          <button class="card center" style="padding:12px 6px" onclick="pySay('${py}','${zi}')">
+            <div style="font-size:34px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${py}</div>
+            <div style="font-size:24px">${zi}</div>
+            <div class="muted" style="font-size:11px">${ti}</div>
+          </button>`).join('')}
       </div></div>`;
   if(MODE==='m') return `
     <div class="page-head"><h1>拼音学习</h1><span class="sub">中班：6 个单韵母 + 四声调 + 看图认读</span></div>
@@ -1181,14 +1186,14 @@ VIEWS.pinyin = ()=>{
           <div style="font-size:34px">${f.em}</div>
           <div style="font-size:40px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${f.l}</div>
           <div class="row" style="justify-content:center;margin-top:8px">
-            ${f.tone.map(t=>`<button class="btn sm ghost" onclick="speak('${t}')">${t}</button>`).join('')}
+            ${f.tone.map(t=>`<button class="btn sm ghost" onclick="pySay('${t}','${f.w}')">${t}</button>`).join('')}
           </div>
         </div>`).join('')}
     </div>
     <div class="card center"><b>看图认读</b>
       <div class="grid g3" style="margin-top:10px">
         ${PINYIN.syllables.slice(0,6).map(s=>`
-          <button class="card center" onclick="speak('${s.s}')">
+          <button class="card center" onclick="pySay('${s.s}','${s.w}')">
             <div style="font-size:34px">${s.em}</div>
             <div style="font-size:24px;color:var(--green-d);font-weight:700">${s.s}</div>
             <div class="muted">${s.w}</div>
@@ -1198,7 +1203,7 @@ VIEWS.pinyin = ()=>{
   const table = (title, arr)=>`
     <div class="card tight"><b>${title}</b>
       <div class="row" style="margin-top:8px">
-        ${arr.map(x=>`<button class="btn sm ghost" onclick="speak('${x}')">${x}</button>`).join('')}
+        ${arr.map(x=>`<button class="btn sm ghost" onclick="pySay('${x}','')">${x}</button>`).join('')}
       </div></div>`;
   return `
     <div class="page-head"><h1>拼音学习</h1><span class="sub">大班：声母 · 韵母 · 整体认读 · 拼读练习</span></div>
@@ -1211,11 +1216,29 @@ VIEWS.pinyin = ()=>{
       <button class="btn" onclick="pinyinQuiz()">开始（5 题）</button>
     </div>`;
 };
+function pyItemText(it){
+  const key = it && it.s;
+  if(key && PY_CHAR[key]) return PY_CHAR[key];
+  const m = String((it&&it.w)||'').match(/[\u4e00-\u9fa5]+/g);
+  if(m && m.length) return m[0].slice(0,1);
+  return key || '';
+}
+function pyItemSay(it){ speak(pyItemText(it), 'zh-CN'); }
+const PY_CHAR = {'a':'啊','o':'喔','e':'鹅','i':'衣','u':'乌','ü':'迂',
+  'b':'玻','p':'坡','m':'摸','f':'佛','d':'得','t':'特','n':'讷','l':'勒','g':'哥','k':'科','h':'喝',
+  'j':'鸡','q':'七','x':'西','zh':'知','ch':'吃','sh':'诗','r':'日','z':'资','c':'次','s':'思','y':'衣','w':'乌',
+  'mā':'妈','má':'麻','mǎ':'马','mà':'骂'};
+function pySay(x, word){
+  let text = PY_CHAR[x];
+  if(!text && word) text = String(word).slice(0,1);
+  if(!text) text = x;
+  speak(text, 'zh-CN');
+}
 function pinyinQuiz(){
   const list = sample(PINYIN.syllables,5).map(it=>{
     const others = sample(PINYIN.syllables.filter(x=>x.s!==it.s),3).map(x=>x.s);
     const opts = shuffle([it.s,...others]);
-    return {type:'拼读',prompt:`「${it.w}」的音节是哪个？`,visual:it.em,options:opts,ans:opts.indexOf(it.s)};
+    return {type:'拼读',prompt:`「${it.w}」的音节是哪个？`,visual:it.em,options:opts,ans:opts.indexOf(it.s),speakText:String(it.w).slice(0,1)};
   });
   Q={key:'pinyin',food:'carrot',title:'拼音 · 拼读',idx:0,right:0,total:list.length,list};
   renderQuiz();
@@ -2487,7 +2510,11 @@ VIEWS.lv = function(){
         <div style="font-size:30px">${it.em||'📜'}</div>
         <b style="display:block;margin:4px 0">${it.t}</b>
         <span class="muted" style="font-size:13px">${it.a}</span></button>`;
-      return `<button class="card center" onclick="speak('${esc(it.s||it.w)}','${LV.mod==='yingyu'?'en-US':'zh-CN'}')">
+      if(LV.mod==='pinyin') return `<button class="card center" onclick="speak('${esc(pyItemText(it))}','zh-CN')">
+        <div style="font-size:32px">${it.em}</div>
+        <div style="font-size:32px;font-weight:700;color:var(--green-d)">${it.s||it.w}</div>
+        <div class="muted">${it.w&&it.s?it.w:(it.z||'')}</div></button>`;
+      return `<button class="card center" onclick="speak('${esc(it.s||it.w)}','en-US')">
         <div style="font-size:32px">${it.em}</div>
         <div style="font-size:${LV.mod==='pinyin'?'32':'20'}px;font-weight:700;color:var(--green-d)">${it.s||it.w}</div>
         <div class="muted">${it.w&&it.s?it.w:(it.z||'')}</div></button>`;
@@ -2543,8 +2570,16 @@ function lvBuildQ(){
       return {type:'英语', prompt:'听一听，这是哪一句？', visual:'🔊', options:opts, ans:opts.indexOf(it.w), speakText:it.w};
     }
     const others = sample(lv.items.filter(x=>x.s!==it.s), 2);
+    const say = pyItemText(it);
+    if(MODE==='s'){
+      const opts = shuffle([it, ...others]);
+      return {type:'听音选字', prompt:'听一听，是哪一个？', visual:'', big:true,
+        options:opts.map(o=>`<span style="font-size:34px">${o.s}</span>`), ans:opts.indexOf(it),
+        speakText:say, speakLang:'zh-CN', hint:'没听清就点「🔊 再听一遍」'};
+    }
     const opts = shuffle([it.s, ...others.map(o=>o.s)]);
-    return {type:'拼音', prompt:`「${it.w}」的音是哪个？`, visual:it.em, options:opts, ans:opts.indexOf(it.s)};
+    return {type:'拼音', prompt:`听一听，选出正确的音节`, visual:it.em,
+      options:opts, ans:opts.indexOf(it.s), speakText:say, speakLang:'zh-CN'};
   });
 }
 function lvQuiz(){
