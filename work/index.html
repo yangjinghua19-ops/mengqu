@@ -567,6 +567,21 @@ function speak(text, lang){
 }
 function stopSpeak(){ try{ speechSynthesis.cancel(); }catch(e){} }
 
+function resetAllProgress(){
+  const ok = confirm('确定要清零全部学习记录吗？\n\n识字进度、拼音/英语/数学/古诗通关、骨头、星星、宠物成长、打卡日历都会回到第一天。\n\n这个操作不能撤销。');
+  if(!ok) return;
+  const keepName = (S && S.name) || '', keepPet = (S && S.petName) || '朵朵';
+  try{
+    ['s','m','l'].forEach(m=>{
+      const fresh = blankState(m); fresh.name = keepName; fresh.petName = keepPet;
+      localStorage.setItem(APP+'_'+m, JSON.stringify(fresh));
+    });
+  }catch(e){ ['s','m','l'].forEach(m=>{ try{ localStorage.removeItem(APP+'_'+m); }catch(e2){} }); }
+  try{ S = blankState(MODE); S.name = keepName; S.petName = keepPet; }catch(e){}
+  try{ localStorage.removeItem('mengqu_goal_v1'); }catch(e){}
+  try{ localStorage.removeItem('mengqu_badges'); }catch(e){}
+  location.href = location.pathname + '?reset=' + Date.now();
+}
 function openVoiceSettings(){
   const zh = zhVoiceList();
   const opts = zh.length
@@ -588,6 +603,7 @@ function openVoiceSettings(){
         <button class="btn ghost" onclick="speak('你好呀，我们读读 apple')">试听中英</button>
         <button class="btn" onclick="closeModal()">好了</button>
       </div>
+      <button class="btn ghost" style="margin-top:10px;width:100%;color:#d9738a;border-color:#ffd9e2" onclick="resetAllProgress()">🧹 清零全部学习记录（重新开始）</button>
     </div></div>`;
 }
 
