@@ -389,6 +389,9 @@ ul{margin:0;padding:0;list-style:none}
 .sec-dot.now{background:#ffcf6b}
 
 .story-cover{width:100%;height:96px;object-fit:cover;border-radius:14px;display:block}
+
+.options.big{grid-template-columns:repeat(3,1fr)}
+.options.big .opt{font-size:46px;min-height:104px;padding:10px}
 </style>
 </head>
 <body class="mode-m">
@@ -1034,17 +1037,19 @@ function renderQuiz(){
   const q = Q.list[Q.idx];
   const pct = Math.round(Q.idx/Q.total*100);
   const opts = q.options.map((o,i)=>`<button class="opt" data-i="${i}" onclick="answer(this,${i})">${o}</button>`).join('');
-  const cols = q.options.length<=2 ? 'one' : '';
+  const cols = (q.options.length<=2 ? 'one ' : '') + (q.big ? 'big' : '');
   $('#viewRoot').innerHTML = `
     <div class="page-head"><h1>${Q.title}</h1><span class="sub">第 ${Q.idx+1} / ${Q.total} 题 · 答对 ${Q.right}</span></div>
     <div class="bar" style="margin-bottom:16px"><i style="width:${pct}%"></i></div>
     <div class="learn-card">
       <div class="q-head"><span class="pill">${q.type||'练习'}</span>
-        <button class="speak-btn" onclick="speak('${esc(q.prompt)}')">🔊 读题</button></div>
+        <button class="speak-btn" onclick="speak('${esc(q.speakText||q.prompt)}','${q.speakText?'en-US':'zh-CN'}')">${q.speakText?'🔊 再听一遍':'🔊 读题'}</button></div>
       <div class="q-prompt">${q.prompt}</div>
       ${q.visual?`<div class="q-visual">${q.visual}</div>`:''}
       <div class="options ${cols}">${opts}</div>
+      ${q.hint?`<div class="muted" style="margin-top:12px;font-size:13px">${q.hint}</div>`:''}
     </div>`;
+  if(q.speakText) setTimeout(()=>{ try{ speak(q.speakText,'en-US'); }catch(e){} }, 350);
 }
 function answer(el, i){
   if(Q.locked) return;
@@ -2458,14 +2463,28 @@ function lvBuildQ(){
       return {type:'古诗', prompt:`《${it.t}》的第一句是？`, visual:it.em||'📜', options:opts, ans:opts.indexOf(it.lines[0])};
     }
     if(LV.mod==='yingyu'){
-      if(it.z){
-        const others = sample(lv.items.filter(x=>x.w!==it.w), 2);
-        const opts = shuffle([it.z, ...others.map(o=>o.z)]);
-        return {type:'英语', prompt:`「${it.w}」是什么意思？`, visual:it.em, options:opts, ans:opts.indexOf(it.z)};
-      }
       const others = sample(lv.items.filter(x=>x.w!==it.w), 2);
+      if(!it.w) return {type:'英语', prompt:'听一听', visual:'', options:['请再试一次','继续'], ans:1};
+      if(MODE==='s'){
+        const opts = shuffle([it, ...others]);
+        return {type:'听音选图', prompt:'听一听，是哪一个？', visual:'', big:true,
+          options:opts.map(o=>`<span>${o.em||'🔊'}</span>`), ans:opts.indexOf(it),
+          speakText:it.w, hint:'没听清就点「🔊 再听一遍」'};
+      }
+      if(MODE==='l'){
+        const first = (String(it.w).match(/[a-zA-Z]/)||['a'])[0].toUpperCase();
+        const letters='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(c=>c!==first);
+        const opts = shuffle([first, ...sample(letters,2)]);
+        return {type:'首音', prompt:`「${it.w}」的第一个字母是？`, visual:it.em, options:opts,
+          ans:opts.indexOf(first), speakText:it.w};
+      }
+      if(it.z){
+        const opts = shuffle([it.z, ...others.map(o=>o.z)]);
+        return {type:'看图认词', visual:`<div style="font-size:60px">${it.em||'🔊'}</div><div style="font-size:26px;font-weight:800;color:#4f9f6a;margin-top:4px">${it.w}</div>`,
+          prompt:'这个词是什么意思？', options:opts, ans:opts.indexOf(it.z), speakText:it.w};
+      }
       const opts = shuffle([it.w, ...others.map(o=>o.w)]);
-      return {type:'英语', prompt:'听一听，这是哪一句？', visual:'🔊 '+it.w, options:opts, ans:opts.indexOf(it.w)};
+      return {type:'英语', prompt:'听一听，这是哪一句？', visual:'🔊', options:opts, ans:opts.indexOf(it.w), speakText:it.w};
     }
     const others = sample(lv.items.filter(x=>x.s!==it.s), 2);
     const opts = shuffle([it.s, ...others.map(o=>o.s)]);
