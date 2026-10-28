@@ -2123,7 +2123,8 @@ function gkRender(){
       <div class="gk-mean">${rows}</div>
       ${m.ant?`<div class="mean-ant">↔️ 和「${m.ant}」是一对相反的</div>`:''}
       ${m.a?`<div class="mean-act">🤸 跟我做：${m.a}</div>`:''}
-      <button class="btn" style="margin-top:14px;width:100%" onclick="gkNext()">我懂了 →</button>
+      <button class="btn ghost" style="margin-top:14px;width:100%" onclick="gkMeanSpeak()">🔊 全听一遍</button>
+      <button class="btn" style="margin-top:10px;width:100%" onclick="gkNext()">我懂了 →</button>
     </div>`;
   } else if(slot==='读'){
     body = `<div class="learn-card center">
@@ -2178,6 +2179,12 @@ function gkRender(){
     if(base) base.innerHTML=(c.m||[]).map(st=>`<polyline points="${st.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#dfe9e2" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`).join('');
     setTimeout(()=>{ try{ gkPlayAll(); }catch(e){} }, 350);
   }
+}
+function gkMeanSpeak(){
+  const c=GK.ch; const m=CHAR_MEAN[c.c]; if(!m) return;
+  const texts=(m.s||[]).map(t=>String(t).replace(/^\S+\s*/,''));
+  texts.forEach((t,i)=>setTimeout(()=>{ try{ speak(t); }catch(e){} }, i*2600));
+  setTimeout(()=>{ try{ speak('跟我做：'+m.a); }catch(e){} }, texts.length*2600);
 }
 function gkSlots(c){ return CHAR_MEAN[c.c] ? ['认','懂','读','词','写','找'] : ['认','读','词','写','找']; }
 function gkStep(n){ GK.step=n; const sl=gkSlots(GK.ch); if(sl[n]==='写'){ GK.stroke=0; GK.trail=[]; } renderChrome(); gkRender(); }
