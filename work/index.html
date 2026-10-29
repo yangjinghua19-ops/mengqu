@@ -290,6 +290,7 @@ ul{margin:0;padding:0;list-style:none}
 
 /* 游戏区 */
 .game-board{position:relative;background:#fbfdfb;border:2px dashed #dceadf;border-radius:20px;padding:16px;min-height:260px}
+.tile.matched{background:#e8f7ec;box-shadow:none}
 .tile{background:var(--white);border-radius:14px;box-shadow:var(--shadow-s);display:flex;align-items:center;justify-content:center;font-size:34px;cursor:pointer;user-select:none;transition:transform .12s,box-shadow .15s;min-height:70px}
 .tile:hover{transform:translateY(-2px)}
 .tile.sel{outline:3px solid var(--pink-d);outline-offset:-1px}
@@ -1646,13 +1647,23 @@ function matchNew(){
 }
 function drawMatch(){
   const M=G.match;
+  if(!M || G.type!=='match') return;
   $('#viewRoot').innerHTML = head()+`
     <div class="card center">
-      <p class="muted">点两张相同的卡片，把它们配成一对</p>
-      <div class="grid" style="grid-template-columns:repeat(${Math.min(M.cards.length,4)},1fr);margin-top:14px">
-        ${M.cards.map((c,i)=>`<button class="tile ${c.done?'matched':''}" style="min-height:78px;font-size:34px" onclick="matchTap(${i})">${c.open||c.done?c.e:'❓'}</button>`).join('')}
+      <p class="muted">点一下翻开，找出两张一样的</p>
+      <div style="margin:10px 0 2px"><button class="btn ghost" onclick="matchPeek()">👀 偷看一下</button></div>
+      <div class="grid" style="grid-template-columns:repeat(${Math.min(M.cards.length,4)},1fr);margin-top:10px">
+        ${M.cards.map((c,i)=>`<button class="tile ${c.done?'matched':''}" style="min-height:78px;font-size:34px" onclick="matchTap(${i})">${c.open||c.done?c.e:'🐾'}</button>`).join('')}
       </div>
     </div>`;
+}
+function matchPeek(){
+  const M=G.match;
+  if(M.lock) return;
+  M.lock=true;
+  M.cards.forEach(c=>{ if(!c.done) c.open=true; });
+  drawMatch();
+  setTimeout(()=>{ if(!G || !G.match) return; M.cards.forEach(c=>{ if(!c.done && c!==M.cards[M.first]) c.open=false; }); M.lock=false; drawMatch(); }, 1500);
 }
 function matchTap(i){
   const M=G.match; const c=M.cards[i];
@@ -3086,19 +3097,27 @@ function patternNew(){
 }
 function drawPattern(){
   const P=G.pattern;
+  if(!P || G.type!=='pattern') return;
   $('#viewRoot').innerHTML = head()+`
     <div class="card center">
       <p class="muted">接下来应该是什么？</p>
       <div style="font-size:38px;letter-spacing:6px;margin:18px 0;line-height:1.5">${P.shown.join('')}<span style="opacity:.35">？</span></div>
       <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:8px">
-        ${P.opts.map((e,i)=>`<button class="tile" style="min-height:74px;font-size:34px" onclick="patternTap(${i})">${e}</button>`).join('')}
+        ${P.opts.map((e,i)=>`<button class="tile" style="min-height:74px;font-size:34px" onclick="patternTap(this,${i})">${e}</button>`).join('')}
       </div>
     </div>`;
 }
-function patternTap(i){
+function patternTap(el, i){
   const P=G.pattern;
-  if(P.opts[i]===P.ans){ sfx.good(); G.level++; renderGame(); }
-  else { sfx.bad(); toast('再看看前面的样子 🙂'); }
+  if(P.opts[i]===P.ans){
+    sfx.ok();
+    if(el){ el.style.background='#d9f2e2'; el.style.borderColor='#7ec98f'; el.textContent='✓'; }
+    setTimeout(()=>{ G.level++; renderGame(); }, 320);
+  } else {
+    sfx.no();
+    if(el){ el.style.background='#ffe3ea'; el.style.borderColor='#ffb6c8'; setTimeout(()=>{ el.style.background=''; el.style.borderColor=''; }, 600); }
+    toast('再看看前面的样子 🙂');
+  }
 }
 
 /* ---- 影子配对 ---- */
@@ -3113,19 +3132,27 @@ function shadowNew(){
 }
 function drawShadow(){
   const S2=G.shadow;
+  if(!S2 || G.type!=='shadow') return;
   $('#viewRoot').innerHTML = head()+`
     <div class="card center">
       <p class="muted">哪一个和上面的图形一样？</p>
       <div style="font-size:64px;margin:12px 0">${S2.target}</div>
       <div class="grid" style="grid-template-columns:repeat(${S2.opts.length},1fr);gap:10px">
-        ${S2.opts.map((e,i)=>`<button class="tile" style="min-height:80px;font-size:40px" onclick="shadowTap(${i})"><span style="filter:brightness(0);opacity:.55">${e}</span></button>`).join('')}
+        ${S2.opts.map((e,i)=>`<button class="tile" style="min-height:80px;font-size:40px" onclick="shadowTap(this,${i})"><span style="filter:brightness(0);opacity:.55">${e}</span></button>`).join('')}
       </div>
     </div>`;
 }
-function shadowTap(i){
+function shadowTap(el, i){
   const S2=G.shadow;
-  if(S2.opts[i]===S2.target){ sfx.good(); G.level++; renderGame(); }
-  else { sfx.bad(); toast('影子是黑黑的，看形状哦 🙂'); }
+  if(S2.opts[i]===S2.target){
+    sfx.ok();
+    if(el){ el.style.background='#d9f2e2'; el.style.borderColor='#7ec98f'; }
+    setTimeout(()=>{ G.level++; renderGame(); }, 320);
+  } else {
+    sfx.no();
+    if(el){ el.style.background='#ffe3ea'; el.style.borderColor='#ffb6c8'; setTimeout(()=>{ el.style.background=''; el.style.borderColor=''; }, 600); }
+    toast('影子是黑黑的，看形状哦 🙂');
+  }
 }
 
 boot();
