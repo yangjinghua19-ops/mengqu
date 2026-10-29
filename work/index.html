@@ -2404,7 +2404,7 @@ function gkFinish(){
   if(!S.gk) S.gk = {};
   const u = gkUnits()[GK.unit];
   const unitDone = gkUnitDone(u);
-  if(unitDone && !S.gkUnits[GK.unit]){ S.gkUnits[GK.unit]=true; S.stars+=1; save(); }
+  if(unitDone && !S.gkUnits[GK.unit]){ S.gkUnits[GK.unit]=true; S.star=(S.star||0)+1; save(); }
   burst('⭐');
   const _h = document.getElementById('gkHint'); if(_h) _h.textContent = first?'写对啦！⭐':'又写对一遍！';
   setTimeout(()=>{
@@ -2532,7 +2532,7 @@ VIEWS.lv = function(){
       <div style="font-size:56px">${LVDATA[LV.mod].ic}</div>
       <h2 style="margin:10px 0 6px;font-size:22px">${lv.t}</h2>
       <p class="muted">这一关只出 3 题，答对 2 题就过关</p>
-      <button class="btn" style="margin-top:16px" onclick="${(LV.mod==='math'||LV.mod==='luoji')?'secQuiz()':'lvQuiz()'}">开始（${(LV.mod==='math'||LV.mod==='luoji')&&secState(LV.mod).sec===3?'6':'3'} 题）</button>
+      <button class="btn" style="margin-top:16px" onclick="${(LV.mod==='math'||LV.mod==='luoji')?'secQuiz()':'lvQuiz()'}">开始（${(LV.mod==='math'||LV.mod==='luoji') ? (LV.kind==='exam'?6:3) : lvQCount()} 题）</button>
     </div>
     <div class="note">答错不扣分，可以一直试。</div>`;
   }
@@ -2625,6 +2625,7 @@ function lvBuildQ(){
       options:opts, ans:opts.indexOf(it.s), speakText:say, speakLang:'zh-CN'};
   });
 }
+function lvQCount(){ return 3; }
 function lvQuiz(){
   const d = LVDATA[LV.mod];
   const list = lvBuildQ();
@@ -2632,7 +2633,7 @@ function lvQuiz(){
   Q = { key:LV.mod, food:d.food, title:`${d.name} · 第 ${LV.i+1} 关`, idx:0, right:0, total:list.length, list,
     onDone:(rate)=>{
       const pass = rate>=60;
-      if(pass && !lvDone(LV.mod,LV.i)){ lvStore(LV.mod)[LV.i]=true; S.stars=(S.stars||0)+1; S.bones+=3; if(LV.mod==='yingyu') enMarkDone(); save(); }
+      if(pass && !lvDone(LV.mod,LV.i)){ lvStore(LV.mod)[LV.i]=true; S.star=(S.star||0)+1; S.bones+=3; if(LV.mod==='yingyu') enMarkDone(); save(); }
       doneModal({art: pass?'⭐':'💛', title: pass?'过关啦！':`差一点点（${rate}%）`,
         desc: pass?`「${lvLevels(LV.mod)[LV.i].t}」通过，+3 根骨头`:'再做一次就可以过关', next:`lvBack(${pass})`});
     }};
@@ -3002,69 +3003,112 @@ function enReview(){
 /* ===== 算术 / 逻辑：小节制（每关 4 节，一周 1 节） ===== */
 const SEC_PER_UNIT = 4;
 function secWeekKey(){ const d=new Date(); const off=(d.getDay()+6)%7; const m=new Date(d.getTime()-off*86400000); return m.toISOString().slice(0,10); }
+function secWeekday(){ return (new Date().getDay()+6)%7; }  /* 0=周一 */
+function secDateKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function secState(mod){
   if(!S.sec) S.sec={};
-  const st = S.sec[mod] || (S.sec[mod]={n:0, week:''});
-  const total = lvLevels(mod).length*SEC_PER_UNIT;
+  const st = S.sec[mod] || (S.sec[mod]={n:0});
+  const levels = lvLevels(mod), total = levels.length*SEC_PER_UNIT;
   const n = Math.min(st.n||0, total);
-  const wk = secWeekKey();
-  return {n, total, unit: Math.floor(n/SEC_PER_UNIT), sec: n%SEC_PER_UNIT, wk, can: st.week!==wk, used: st.week===wk};
+  const unit = Math.min(Math.floor(n/SEC_PER_UNIT), levels.length-1);
+  const sec = n % SEC_PER_UNIT;
+  const today = secDateKey();
+  return { n, total, levels, unit, sec, today,
+    canNew: st.last !== today && n < total,
+    reviewed: st.review === today,
+    examined: st.exam === today,
+    st };
 }
 function secHome(mod){
-  const d=LVDATA[mod], levels=lvLevels(mod), st=secState(mod);
-  const finished = st.n>=st.total;
-  const lv = levels[Math.min(st.unit, levels.length-1)];
-  const isExam = st.sec===SEC_PER_UNIT-1;
-  const qn = isExam?6:3;
-  const dots = Array.from({length:SEC_PER_UNIT},(_,k)=>{
-    const cls = k<st.sec ? 'on' : (k===st.sec?'now':'');
-    return `<i class="sec-dot ${cls}"></i>`;
-  }).join('');
+  const d = LVDATA[mod], st = secState(mod);
+  const pct = Math.round(st.n/st.total*100);
+  const labels = ['第1节','第2节','第3节','第4节','复习','复习','抽考'];
+  const strip = weekStrip(labels, (i)=> i<4 ? (i < st.sec) : (i===6 ? st.examined : st.reviewed));
+  const lv = st.levels[st.unit];
   return `
   <div class="hero">
     <div class="hero-art">${d.ic}</div>
     <h2>${d.name}闯关</h2>
-    <p>${MODE_NAME[MODE]} · ${levels.length} 关，每关 4 节，一周 1 节<br>已学 ${st.n} / ${st.total} 节</p>
-    <div class="hero-bar"><i style="width:${Math.round(st.n/st.total*100)}%"></i></div>
+    <p>${MODE_NAME[MODE]} · 共 ${st.levels.length} 关 · 每关 4 节（正好一周）<br>已学 ${st.n} / ${st.total} 节（${pct}%）</p>
+    <div class="hero-bar"><i style="width:${pct}%"></i></div>
   </div>
-  ${finished ? `<div class="card center"><div style="font-size:44px">🏆</div><b>全部学完啦</b><p class="muted">可以自由复习任意小节</p></div>` : `
-  <div class="card gk-unit" onclick="${st.can?`secOpen('${mod}')`:''}" style="${st.can?'':'opacity:.62'}">
+
+  <div class="card tight">
+    <div class="row" style="justify-content:space-between"><span class="muted">🗓 本周计划（第 ${st.unit+1} 关）</span><span class="pill">一关 = 一周</span></div>
+    ${strip}
+    <div class="muted" style="font-size:13px;line-height:1.7;margin-top:6px">周一到周四每天学 1 节（约 2 分钟），周五、周六复习，周日抽考。</div>
+  </div>
+
+  <div class="card gk-unit" onclick="${st.canNew?`secStart('${mod}','new')`:''}" style="${st.canNew?'':'opacity:.62'}">
     <div class="gk-badge" style="background:var(--green);color:#fff">${st.unit+1}</div>
     <div class="gk-info">
-      <b>第 ${st.unit+1} 关 · 第 ${st.sec+1}/4 节${isExam?' · 小考':''}</b>
-      <small>${lv.t} · ${qn} 道题 · 约 ${qn===6?'4':'2'} 分钟</small>
-      <div class="sec-dots">${dots}</div>
+      <b>第 ${st.unit+1} 关 · 第 ${Math.min(st.sec+1,4)}/4 节</b>
+      <small>${lv.t} · 3 道题 · 约 2 分钟</small>
+      <div class="sec-dots">${Array.from({length:SEC_PER_UNIT},(_,k)=>`<i class="sec-dot ${k<st.sec?'on':(k===st.sec?'now':'')}"></i>`).join('')}</div>
     </div>
-    <div class="gk-go">${st.can?'开始 ›':'下周 ›'}</div>
-  </div>`}
-  <div class="card tight">
-    <div class="row" style="justify-content:space-between"><span class="muted">本周节奏</span><span class="pill">一周 1 节</span></div>
-    <div class="muted" style="font-size:13px;line-height:1.7;margin-top:6px">每关 4 节：前 3 节各 3 道题，第 4 节是小考（6 道题，对 5 道算过）。一关过完得 1 颗星，全关学完约 ${levels.length*SEC_PER_UNIT} 周。</div>
+    <div class="gk-go">${st.n>=st.total?'已学完':(st.canNew?'开始 ›':'今天学过啦')}</div>
   </div>
-  <div class="note">${st.can?'今天的小节做完就可以休息，明天再来复习字卡和英语。':'这周的已经做完啦，下周再学新的一节。'}</div>`;
+
+  <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px">
+    <button class="card center" onclick="secStart('${mod}','review')" style="${st.n>0?'':'opacity:.55'}" ${st.n>0?'':'disabled'}>
+      <div style="font-size:26px">🔁</div><b style="font-size:15px;display:block;margin-top:2px">复习</b><small class="muted" style="font-size:12px">3 道学过的题</small>
+    </button>
+    <button class="card center" onclick="secStart('${mod}','exam')" style="${st.n>0?'':'opacity:.55'}" ${st.n>0?'':'disabled'}>
+      <div style="font-size:26px">📝</div><b style="font-size:15px;display:block;margin-top:2px">抽考</b><small class="muted" style="font-size:12px">6 题对 5 算过</small>
+    </button>
+  </div>
+  <div class="note">${st.canNew?'今天还有 1 节可以学；学完想再练，就点「复习」或「抽考」。':'今天这节学完啦，可以复习或抽考，明天再来学新的。'}</div>`;
 }
-function secOpen(mod){ LV.mod=mod; LV.i=secState(mod).unit; LV.phase='quiz'; go('lv'); }
-function secQuiz(){
-  const d=LVDATA[LV.mod], st=secState(LV.mod), lv=lvLevels(LV.mod)[LV.i];
-  const isExam = st.sec===SEC_PER_UNIT-1;
-  const qn = isExam?6:3;
-  const list = Array.from({length:qn},()=>lv.gen());
+function secStart(mod, kind){
+  LV.mod = mod; LV.kind = kind || 'new';
+  const st = secState(mod);
+  if(kind==='new' && !st.canNew){ toast('今天这节已经学过了，明天再来 🐰'); return; }
+  if((kind==='review'||kind==='exam') && st.n===0){ toast('先学一节，再来复习 🙂'); return; }
+  LV.i = st.unit;
   go('lv');
-  Q = { key:LV.mod, food:d.food, title:`${d.name} · 第 ${LV.i+1} 关 · 第 ${st.sec+1} 节`, idx:0, right:0, total:list.length, list,
+}
+function secQuiz(){
+  const mod = LV.mod, d = LVDATA[mod], st = secState(mod), kind = LV.kind||'new';
+  const levels = st.levels, unit = st.unit, lv = levels[unit];
+  let list = [], title = '', need = 60, reward = 3;
+  if(kind==='new'){
+    list = Array.from({length:3}, ()=>lv.gen());
+    title = `${d.name} · 第 ${unit+1} 关 · 第 ${st.sec+1} 节`;
+    need = 60; reward = 3;
+  } else if(kind==='review'){
+    const pool = [];
+    for(let u=0; u<=unit; u++){
+      const l = levels[u]; if(!l) continue;
+      const maxSec = (u<unit) ? SEC_PER_UNIT : st.sec;
+      if(maxSec>0) pool.push(l.gen);
+    }
+    const gen = pool.length ? pool : [lv.gen];
+    list = Array.from({length:3}, ()=> gen[Math.floor(Math.random()*gen.length)]());
+    title = `${d.name} · 复习`;
+    need = 60; reward = 2;
+  } else {
+    list = Array.from({length:6}, ()=>lv.gen());
+    title = `${d.name} · 第 ${unit+1} 关 · 抽考`;
+    need = 84; reward = 2;
+  }
+  go('lv');
+  Q = { key:mod, food:d.food, title, idx:0, right:0, total:list.length, list,
     onDone:(rate)=>{
-      const need = isExam?84:60;
-      const pass = rate>=need;
+      const pass = rate >= need;
       if(pass){
-        const stt=S.sec[LV.mod]; stt.n=(stt.n||0)+1; stt.week=secWeekKey();
-        S.bones+=3;
-        if(isExam){ S.stars=(S.stars||0)+1; }
-        goalAdd(LV.mod==='math'?'math':'luoji');
+        const stt = S.sec[mod];
+        if(kind==='new'){ stt.n = (stt.n||0)+1; stt.last = secDateKey(); }
+        if(kind==='review'){ stt.review = secDateKey(); }
+        if(kind==='exam'){ stt.exam = secDateKey(); }
+        S.bones += reward;
+        if(kind==='exam') S.star = (S.star||0)+1;
+        goalAdd(mod==='math'?'math':'luoji');
         save();
-        if(LV.mod==='math' && currentView==='suan') goalAdd('math');
       }
-      doneModal({art: pass?'⭐':'💛', title: pass?'这一节过啦！':`差一点（${rate}%）`,
-        desc: pass? (isExam?'这一关学完，+3 骨头 +1 颗星':'+3 根骨头，下周再学下一节') : '再来一次就好，不着急',
-        next: pass?`go('${LV.mod==='math'?'suan':'luoji'}')`:`secOpen('${LV.mod}')`});
+      const back = mod==='math' ? 'suan' : 'luoji';
+      doneModal({art: pass?'⭐':'💛', title: pass?(kind==='exam'?'抽考通过！':(kind==='review'?'复习完成！':'这一节过啦！')):`差一点（${rate}%）`,
+        desc: pass? `+${reward} 根骨头${kind==='exam'?' +1 颗星':''}` : '再来一次就好，不着急',
+        next: `go('${back}')`});
     }};
   renderQuiz();
 }
