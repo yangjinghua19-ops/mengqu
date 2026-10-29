@@ -572,6 +572,57 @@ function speak(text, lang, onend){
 }
 function stopSpeak(){ try{ speechSynthesis.cancel(); }catch(e){} }
 
+
+/* ===== 分板块清理 ===== */
+const RESET_MENU = [
+  {id:'shizi', ic:'📖', name:'识字启蒙', prog:()=>Object.keys(gkBandMap()).length+' 字',
+   clear(){ S.gk={}; S.gkUnits={}; if(S.learnedChars) S.learnedChars=[]; }},
+  {id:'pinyin', ic:'🅰️', name:'拼音学习', prog:()=>{const m=S.lv&&S.lv.pinyin&&S.lv.pinyin[MODE];return Object.keys(m||{}).length+' 关';},
+   clear(){ if(S.lv&&S.lv.pinyin) S.lv.pinyin={s:{},m:{},l:{}}; }},
+  {id:'yingyu', ic:'🌍', name:'英语启蒙', prog:()=>{const m=S.lv&&S.lv.yingyu&&S.lv.yingyu[MODE];return Object.keys(m||{}).length+' 关';},
+   clear(){ if(S.lv&&S.lv.yingyu) S.lv.yingyu={s:{},m:{},l:{}}; S.en=null; }},
+  {id:'gushi', ic:'🎋', name:'古诗诵读', prog:()=>(S.learnedPoems||[]).length+' 首',
+   clear(){ S.learnedPoems=[]; if(S.lv&&S.lv.gushi) S.lv.gushi={s:{},m:{},l:{}}; }},
+  {id:'math', ic:'🔢', name:'算术闯关', prog:()=>((S.sec&&S.sec.math&&S.sec.math.n)||0)+' 节',
+   clear(){ if(S.sec) delete S.sec.math; if(S.lv&&S.lv.math) S.lv.math={s:{},m:{},l:{}}; }},
+  {id:'luoji', ic:'🧩', name:'逻辑思维', prog:()=>((S.sec&&S.sec.luoji&&S.sec.luoji.n)||0)+' 节',
+   clear(){ if(S.sec) delete S.sec.luoji; if(S.lv&&S.lv.luoji) S.lv.luoji={s:{},m:{},l:{}}; }},
+  {id:'kepu', ic:'🔬', name:'科普认知', prog:()=>'按天轮播', clear(){ S.kepuPos={}; }},
+  {id:'huiben', ic:'📚', name:'绘本故事', prog:()=>Object.keys(S.storiesDone||{}).length+' 本',
+   clear(){ S.storiesDone={}; }},
+  {id:'youxi', ic:'🎮', name:'益智游戏', prog:()=>(S.gamesCleared||0)+' 关', clear(){ S.gamesCleared=0; S.levelsCleared=0; }},
+  {id:'daka', ic:'✅', name:'任务打卡', prog:()=>(S.streak||0)+' 天连续',
+   clear(){ S.tasksDone={}; S.checkins=[]; S.streak=0; S.lastStudy=''; }},
+  {id:'cuoti', ic:'📕', name:'错题本', prog:()=>((S.wrong||[]).length)+' 题', clear(){ S.wrong=[]; }},
+  {id:'pet', ic:'🐰', name:'宠物与积分', prog:()=>(S.bones||0)+' 骨头 · '+(S.star||0)+' 星',
+   clear(){ S.bones=0; S.xp=0; S.stage=0; S.star=0; S.food={carrot:0,strawberry:0,dew:0}; S.planted=[]; }}
+];
+function resetMenu(){
+  $('#modalRoot').innerHTML = `<div class="mask" onclick="if(event.target===this)closeModal()">
+    <div class="modal" style="max-width:460px">
+      <div class="m-art">🧹</div>
+      <h3>清理学习记录</h3>
+      <p class="muted" style="font-size:13px">只清你想清的那一块，其它板块不受影响。</p>
+      <div style="max-height:46vh;overflow:auto;margin-top:6px">
+        ${RESET_MENU.map(m=>`
+          <div class="row" style="justify-content:space-between;padding:9px 2px;border-bottom:1px solid #f0f4f1">
+            <span style="text-align:left"><b>${m.ic} ${m.name}</b><br><small class="muted">${m.prog()}</small></span>
+            <button class="btn ghost" style="min-height:36px;padding:4px 12px;font-size:13px" onclick="resetModule('${m.id}')">清零</button>
+          </div>`).join('')}
+      </div>
+      <div class="m-btns" style="margin-top:12px">
+        <button class="btn ghost" onclick="resetAllProgress()" style="color:#d9738a;border-color:#ffd9e2">全部清零</button>
+        <button class="btn" onclick="closeModal()">关闭</button>
+      </div>
+    </div></div>`;
+}
+function resetModule(id){
+  const m = RESET_MENU.find(x=>x.id===id); if(!m) return;
+  if(!confirm(`确定清空「${m.name}」的学习记录吗？\n\n其它板块不受影响，这个操作不能撤销。`)) return;
+  m.clear(); save(); closeModal();
+  toast(`「${m.name}」已清零`, 1800);
+  go(currentView||'home');
+}
 function resetAllProgress(){
   const ok = confirm('确定要清零全部学习记录吗？\n\n识字进度、拼音/英语/数学/古诗通关、骨头、星星、宠物成长、打卡日历都会回到第一天。\n\n这个操作不能撤销。');
   if(!ok) return;
@@ -608,7 +659,7 @@ function openVoiceSettings(){
         <button class="btn ghost" onclick="speak('你好呀，我们读读 apple')">试听中英</button>
         <button class="btn" onclick="closeModal()">好了</button>
       </div>
-      <button class="btn ghost" style="margin-top:10px;width:100%;color:#d9738a;border-color:#ffd9e2" onclick="resetAllProgress()">🧹 清零全部学习记录（重新开始）</button>
+      <button class="btn ghost" style="margin-top:10px;width:100%;color:#d9738a;border-color:#ffd9e2" onclick="resetMenu()">🧹 清理学习记录（按板块）</button>
     </div></div>`;
 }
 
