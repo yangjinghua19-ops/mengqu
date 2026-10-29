@@ -2401,7 +2401,7 @@ function gkFinish(){
 function gkNextChar(){
   const units = gkUnits();
   let idx = units.findIndex(u=>u.some(x=>x.c===GK.ch.c));
-  if(idx < 0) idx = GK.unit||0;
+  if(idx < 0){ go('guanka'); return; }
   GK.unit = idx;
   const u = units[idx]||[];
   const next = u.find(c=>!gkLearned(c.c));
