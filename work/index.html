@@ -577,8 +577,6 @@ function stopSpeak(){ try{ speechSynthesis.cancel(); }catch(e){} }
 const RESET_MENU = [
   {id:'shizi', ic:'📖', name:'识字启蒙', prog:()=>Object.keys(gkBandMap()).length+' 字',
    clear(){ S.gk={}; S.gkUnits={}; if(S.learnedChars) S.learnedChars=[]; }},
-  {id:'pinyin', ic:'🅰️', name:'拼音学习', prog:()=>{const m=S.lv&&S.lv.pinyin&&S.lv.pinyin[MODE];return Object.keys(m||{}).length+' 关';},
-   clear(){ if(S.lv&&S.lv.pinyin) S.lv.pinyin={s:{},m:{},l:{}}; }},
   {id:'yingyu', ic:'🌍', name:'英语启蒙', prog:()=>{const m=S.lv&&S.lv.yingyu&&S.lv.yingyu[MODE];return Object.keys(m||{}).length+' 关';},
    clear(){ if(S.lv&&S.lv.yingyu) S.lv.yingyu={s:{},m:{},l:{}}; S.en=null; }},
   {id:'gushi', ic:'🎋', name:'古诗诵读', prog:()=>(S.learnedPoems||[]).length+' 首',
@@ -795,7 +793,7 @@ function ensureDaily(){
 }
 /* 换日时立刻生成本日全部题池（不是清空后懒加载） */
 function prebuildPools(){
-  ['shizi','pinyin','suan','yingyu','luoji','kepu'].forEach(v=>{
+  ['shizi','suan','yingyu','luoji','kepu'].forEach(v=>{
     try{
       const fn = VIEWS[v];
       if(typeof fn === 'function'){ const box=document.createElement('div'); box.innerHTML = fn() || ''; }
@@ -902,7 +900,6 @@ const NAV = [
   { group:'学习乐园', items:[
     {id:'home',   ic:'🏡', name:'我的主页'},
     {id:'guanka', ic:'📖', name:'识字启蒙'},
-    {id:'pinyin', ic:'🅰️', name:'拼音学习'},
     {id:'suan',   ic:'🔢', name:'算术天地'},
     {id:'yingyu', ic:'🌍', name:'英语启蒙'},
     {id:'gushi',  ic:'🎋', name:'古诗诵读'},
@@ -1230,7 +1227,7 @@ VIEWS.home = ()=>{
 
 /* ---------------- 识字 ---------------- */
 /* ---------------- 拼音 ---------------- */
-VIEWS.pinyin = ()=>{
+VIEWS.__pinyinRetired = ()=>{
   if(MODE==='s') return `
     <div class="page-head"><h1>拼音学习</h1><span class="sub">小班：认识 6 个单韵母，听一听、跟着读</span></div>
     <div class="grid g3">
@@ -2508,7 +2505,7 @@ const LVDATA = {
     {t:'日常短句', items: EN.sentences.slice(0,8).map((x,i)=>({k:'s'+i,w:x,z:'',em:'💬'}))},
   ]},
 };
-const LV = { mod:'pinyin', i:0, phase:'learn' };
+const LV = { mod:'math', i:0, phase:'learn' };
 /* 每档只开部分关卡：小班 2 关、中班 3-4 关、大班全开 */
 const LV_LIMIT = { pinyin:{s:2,m:4,l:5} };
 function enWords(){ return EN[MODE] || []; }
@@ -2565,7 +2562,6 @@ function lvHome(mod){
   }).join('')}
   <div class="note">${mod==='math'?'每关 3 道题，答对 2 题就算过关。':'每关先学后练，答对 2 题就算过关。'}</div>`;
 }
-VIEWS.pinyin = ()=>lvHome('pinyin');
 VIEWS.yingyu = ()=>lvHome('yingyu');
 VIEWS.gushi  = ()=>lvHome('gushi');
 
