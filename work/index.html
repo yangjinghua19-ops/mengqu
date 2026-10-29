@@ -397,6 +397,9 @@ ul{margin:0;padding:0;list-style:none}
 .mean-row:active{background:#eef9f1}
 .mean-ant{margin-top:12px;background:#eef2ff;border-radius:14px;padding:10px 14px;font-size:15px;color:#4a5a8a}
 .mean-act{margin-top:14px;background:#fff6e8;border-radius:14px;padding:12px 14px;font-size:16px;color:#8a6a2f;line-height:1.5}
+
+.pv-ctrl button.on{background:#7ec98f;color:#fff;border-color:#7ec98f}
+.btn.on{background:#7ec98f;color:#fff;border-color:#7ec98f}
 </style>
 </head>
 <body class="mode-m">
@@ -536,7 +539,7 @@ function splitLang(text){
   if(last<text.length) out.push({t:text.slice(last), lang:'zh-CN'});
   return out.filter(x=>x.t.trim());
 }
-function speak(text, lang){
+function speak(text, lang, onend){
   if(!window.speechSynthesis){ toast('这个浏览器不支持语音朗读'); return; }
   if(!lang){
     if(/[\u4e00-\u9fa5]/.test(text) && /[A-Za-z]/.test(text)){
@@ -557,6 +560,7 @@ function speak(text, lang){
         u.lang = /^en/i.test(lang) ? 'en-US' : 'zh-CN';
         u.rate = curRate();
         u.pitch = 1.02;
+        if(typeof onend==='function'){ u.onend = onend; u.onerror = onend; }
         const v = pickVoice(lang);
         if(v) u.voice = v; else if(!/^en/i.test(lang)) hintNoZhVoice();
         speechSynthesis.speak(u);
@@ -2714,10 +2718,11 @@ VIEWS.luoji = ()=>lvHome('luoji');
 
 /* ===== 古诗诵读：诗单 + 诗页（方案 A） ===== */
 let GU_PY = true;
+let GU_LOOP = false;
 const POEM_SLUG={'咏鹅':'yonge','静夜思':'jys','春晓':'chunxiao','悯农':'minnong','画':'hua','江雪':'jiangxue','登鹳雀楼':'guanque','相思':'xiangsi','寻隐者不遇':'xunyin','池上':'chishang'};
 function poemShow(t){ const sl=POEM_SLUG[t]; if(!sl) return; window.open('poem/#'+sl,'_blank'); }
 /* ---- 内嵌诗画播放器 ---- */
-const PV = { list:[], i:0, k:0, timer:null, playing:false };
+const PV = { list:[], i:0, k:0, timer:null, playing:false, loop:(localStorage.getItem('mengqu_poem_loop')==='1') };
 function poemIndexByTitle(t){ return (POEMS[MODE]||[]).findIndex(x=>x.t===t); }
 function poemOpen(i){
   const p = (POEMS[MODE]||[])[i]; if(!p) return;
@@ -2730,6 +2735,8 @@ function poemOpen(i){
   document.getElementById('pvTitle').textContent = p.t;
   document.getElementById('pvAuthor').textContent = p.a + (p.tag?' · '+p.tag:'');
   document.getElementById('pvDots').innerHTML = p.lines.map((_,k)=>`<i id="pvd${k}"></i>`).join('');
+  const lb=document.getElementById('pvLoop');
+  if(lb){ lb.classList.toggle('on', !!PV.loop); lb.textContent = PV.loop?'🔁 循环中':'🔁 单曲循环'; }
   document.getElementById('poemView').classList.add('on');
   document.body.style.overflow='hidden';
   poemShowLine(0); poemStart();
@@ -2761,10 +2768,20 @@ function poemSchedule(){ clearTimeout(PV.timer); PV.timer=setTimeout(poemAdvance
 function poemAdvance(){
   if(!PV.playing) return;
   const p=(POEMS[MODE]||[])[PV.i];
-  if(PV.k >= p.lines.length-1){ PV.playing=false; document.getElementById('pvToggle').textContent='重播'; return; }
+  if(PV.k >= p.lines.length-1){
+    if(PV.loop){ poemShowLine(0); poemSpeak(0); poemSchedule(); return; }
+    PV.playing=false; document.getElementById('pvToggle').textContent='重播'; return;
+  }
   poemShowLine(PV.k+1); poemSpeak(PV.k); poemSchedule();
 }
 function poemStart(){ PV.playing=true; document.getElementById('pvToggle').textContent='暂停'; poemSpeak(PV.k); poemSchedule(); save(); }
+function poemLoop(){
+  PV.loop = !PV.loop;
+  try{ localStorage.setItem('mengqu_poem_loop', PV.loop?'1':'0'); }catch(e){}
+  const b=document.getElementById('pvLoop');
+  if(b){ b.classList.toggle('on', PV.loop); b.textContent = PV.loop?'🔁 循环中':'🔁 单曲循环'; }
+  toast(PV.loop?'单曲循环：念完最后一句会自动从头再来':'已关闭循环', 1800);
+}
 function poemToggle(){
   if(!PV.playing){
     const p=(POEMS[MODE]||[])[PV.i];
@@ -2836,6 +2853,7 @@ function guOpen(i, hideText){
       <div class="divider"></div>
       <div class="row" style="justify-content:center;gap:8px;flex-wrap:wrap">
         <button class="btn" onclick="guSpeakAll()">🔊 整首朗读</button>
+      <button class="btn ghost" id="guLoop" onclick="guLoopToggle()">🔁 循环朗读</button>
         <button class="btn ghost" onclick="guFollow()">👂 跟读模式</button>
         <button class="btn ghost" onclick="guTogglePy()">拼音 ${GU_PY?'隐藏':'显示'}</button>
         ${GU.hide?'<button class="btn ghost" onclick="guOpen(GU.i)">👀 看全文</button>':''}
@@ -2858,7 +2876,16 @@ function guSay(k){
 }
 function guSpeakAll(){
   const p=guPoems()[GU.i];
-  speak(p.lines.join(''), 'zh-CN');
+  speak(p.lines.join(''), 'zh-CN', ()=>{
+    if(GU_LOOP) setTimeout(()=>{ if(GU_LOOP) guSpeakAll(); }, 700);
+  });
+}
+function guLoopToggle(){
+  GU_LOOP = !GU_LOOP;
+  const b = document.getElementById('guLoop');
+  if(b){ b.classList.toggle('on', GU_LOOP); b.textContent = GU_LOOP?'🔁 循环中':'🔁 循环朗读'; }
+  if(GU_LOOP){ guSpeakAll(); toast('循环朗读：念完一遍会自动再来一遍', 2000); }
+  else { stopSpeak(); toast('已关闭循环朗读', 1500); }
 }
 function guFollow(){
   const p=guPoems()[GU.i];
@@ -3118,6 +3145,7 @@ boot();
       <button id="pvNext" onclick="poemNext()">下一句</button>
     </div>
     <div class="pv-ctrl" style="margin-top:8px">
+      <button id="pvLoop" onclick="poemLoop()">🔁 单曲循环</button>
       <button onclick="poemFull()">📄 看全文</button>
       <button class="ok" onclick="poemBack()">✅ 我会背了</button>
     </div>
