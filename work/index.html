@@ -622,7 +622,7 @@ function resetModule(id){
   go(currentView||'home');
 }
 function resetAllProgress(){
-  const ok = confirm('确定要清零全部学习记录吗？\n\n识字进度、拼音/英语/数学/古诗通关、骨头、星星、宠物成长、打卡日历都会回到第一天。\n\n这个操作不能撤销。');
+  const ok = confirm('确定要清零全部学习记录吗？\n\n识字进度、英语/数学/古诗通关、骨头、星星、宠物成长、打卡日历都会回到第一天。\n\n这个操作不能撤销。');
   if(!ok) return;
   const keepName = (S && S.name) || '', keepPet = (S && S.petName) || '朵朵';
   try{
@@ -900,7 +900,7 @@ const NAV = [
   { group:'学习乐园', items:[
     {id:'home',   ic:'🏡', name:'我的主页'},
     {id:'guanka', ic:'📖', name:'识字启蒙'},
-    {id:'suan',   ic:'🔢', name:'算术天地'},
+    {id:'suan',   ic:'🔢', name:'算术闯关'},
     {id:'yingyu', ic:'🌍', name:'英语启蒙'},
     {id:'gushi',  ic:'🎋', name:'古诗诵读'},
     {id:'luoji',  ic:'🧩', name:'逻辑思维'},
@@ -1226,93 +1226,6 @@ VIEWS.home = ()=>{
 };
 
 /* ---------------- 识字 ---------------- */
-/* ---------------- 拼音 ---------------- */
-VIEWS.__pinyinRetired = ()=>{
-  if(MODE==='s') return `
-    <div class="page-head"><h1>拼音学习</h1><span class="sub">小班：认识 6 个单韵母，听一听、跟着读</span></div>
-    <div class="grid g3">
-      ${PINYIN.finals.map(f=>`
-        <button class="card center" onclick="pySay('${f.l}','${f.w}')">
-          <div style="font-size:40px">${f.em}</div>
-          <div style="font-size:44px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${f.l}</div>
-          <div class="muted">${f.w}</div>
-        </button>`).join('')}
-    </div>
-    <div class="card center"><b>四声调小游戏</b><p class="muted">点一点，听「妈 麻 马 骂」的四个声调</p>
-      <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px">
-        ${[['mā','妈','一声 ˉ 平'],['má','麻','二声 ˊ 扬'],['mǎ','马','三声 ˇ 拐弯'],['mà','骂','四声 ˋ 降']].map(([py,zi,ti])=>`
-          <button class="card center" style="padding:12px 6px" onclick="pySay('${py}','${zi}')">
-            <div style="font-size:34px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${py}</div>
-            <div style="font-size:24px">${zi}</div>
-            <div class="muted" style="font-size:11px">${ti}</div>
-          </button>`).join('')}
-      </div></div>`;
-  if(MODE==='m') return `
-    <div class="page-head"><h1>拼音学习</h1><span class="sub">中班：6 个单韵母 + 四声调 + 看图认读</span></div>
-    <div class="grid g3">
-      ${PINYIN.finals.map(f=>`
-        <div class="card center">
-          <div style="font-size:34px">${f.em}</div>
-          <div style="font-size:40px;font-weight:700;color:var(--green-d);font-family:Georgia,serif">${f.l}</div>
-          <div class="row" style="justify-content:center;margin-top:8px">
-            ${f.tone.map(t=>`<button class="btn sm ghost" onclick="pySay('${t}','${f.w}')">${t}</button>`).join('')}
-          </div>
-        </div>`).join('')}
-    </div>
-    <div class="card center"><b>看图认读</b>
-      <div class="grid g3" style="margin-top:10px">
-        ${PINYIN.syllables.slice(0,6).map(s=>`
-          <button class="card center" onclick="pySay('${s.s}','${s.w}')">
-            <div style="font-size:34px">${s.em}</div>
-            <div style="font-size:24px;color:var(--green-d);font-weight:700">${s.s}</div>
-            <div class="muted">${s.w}</div>
-          </button>`).join('')}
-      </div></div>`;
-  /* 大班：完整表 + 拼读练习 */
-  const table = (title, arr)=>`
-    <div class="card tight"><b>${title}</b>
-      <div class="row" style="margin-top:8px">
-        ${arr.map(x=>`<button class="btn sm ghost" onclick="pySay('${x}','')">${x}</button>`).join('')}
-      </div></div>`;
-  return `
-    <div class="page-head"><h1>拼音学习</h1><span class="sub">大班：声母 · 韵母 · 整体认读 · 拼读练习</span></div>
-    ${table('声母（23 个）',PINYIN.initials)}
-    ${table('复韵母',PINYIN.compound)}
-    ${table('前后鼻音',PINYIN.nasal)}
-    ${table('整体认读音节',PINYIN.whole)}
-    <div class="card center">
-      <b>拼读小挑战</b><p class="muted">听读音，选出正确的音节</p>
-      <button class="btn" onclick="pinyinQuiz()">开始（5 题）</button>
-    </div>`;
-};
-function pyItemText(it){
-  const key = it && it.s;
-  if(key && PY_CHAR[key]) return PY_CHAR[key];
-  const m = String((it&&it.w)||'').match(/[\u4e00-\u9fa5]+/g);
-  if(m && m.length) return m[0].slice(0,1);
-  return key || '';
-}
-function pyItemSay(it){ speak(pyItemText(it), 'zh-CN'); }
-const PY_CHAR = {'a':'啊','o':'喔','e':'鹅','i':'衣','u':'乌','ü':'迂',
-  'b':'玻','p':'坡','m':'摸','f':'佛','d':'得','t':'特','n':'讷','l':'勒','g':'哥','k':'科','h':'喝',
-  'j':'鸡','q':'七','x':'西','zh':'知','ch':'吃','sh':'诗','r':'日','z':'资','c':'次','s':'思','y':'衣','w':'乌',
-  'mā':'妈','má':'麻','mǎ':'马','mà':'骂'};
-function pySay(x, word){
-  let text = PY_CHAR[x];
-  if(!text && word) text = String(word).slice(0,1);
-  if(!text) text = x;
-  speak(text, 'zh-CN');
-}
-function pinyinQuiz(){
-  const list = sample(PINYIN.syllables,5).map(it=>{
-    const others = sample(PINYIN.syllables.filter(x=>x.s!==it.s),3).map(x=>x.s);
-    const opts = shuffle([it.s,...others]);
-    return {type:'拼读',prompt:`「${it.w}」的音节是哪个？`,visual:it.em,options:opts,ans:opts.indexOf(it.s),speakText:String(it.w).slice(0,1)};
-  });
-  Q={key:'pinyin',food:'carrot',title:'拼音 · 拼读',idx:0,right:0,total:list.length,list};
-  renderQuiz();
-}
-
 /* ---------------- 算术 ---------------- */
 VIEWS.suan = ()=>{
   const n = {s:8,m:10,l:10}[MODE];
