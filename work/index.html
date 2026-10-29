@@ -2212,7 +2212,7 @@ function gkRender(){
       <div class="muted" style="margin-bottom:6px">最后一步：找出「${c.c}」</div>
       <div class="gk-box" style="width:96px;height:96px;margin-bottom:14px">${gkGlyphSvg(c, 70)}</div>
       <div class="grid g2" style="gap:12px;width:100%">
-        ${opts.map(o=>`<button class="btn ghost" style="font-size:34px;min-height:76px;font-family:Kaiti,KaiTi SC,serif" onclick="gkPick('${o}','${c.c}')">${o}</button>`).join('')}
+        ${opts.map(o=>`<button class="btn ghost" style="font-size:34px;min-height:76px;font-family:Kaiti,KaiTi SC,serif" onclick="gkPick(this,'${o}','${c.c}')">${o}</button>`).join('')}
       </div>
     </div>`;
   }
@@ -2243,9 +2243,15 @@ function gkSlots(c){ return CHAR_MEAN[c.c] ? ['认','懂','读','词','写','找
 function gkStep(n){ GK.step=n; const sl=gkSlots(GK.ch); if(sl[n]==='写'){ GK.stroke=0; GK.trail=[]; } renderChrome(); gkRender(); }
 function gkNext(){ GK.step=(GK.step||0)+1; const sl=gkSlots(GK.ch); if(sl[GK.step]==='写'){ GK.stroke=0; GK.trail=[]; } renderChrome(); gkRender(); }
 function gkGoto(name){ const sl=gkSlots(GK.ch); const i=sl.indexOf(name); GK.step=i<0?0:i; if(name==='写'){ GK.stroke=0; GK.trail=[]; } renderChrome(); gkRender(); }
-function gkPick(sel, ans){
-  if(sel===ans){ sfx.ok(); gkFinish(); }
-  else { sfx.no(); toast('💛 再看看，是「'+ans+'」'); }
+function gkPick(el, sel, ans){
+  if(sel===ans){
+    if(el){ el.style.background='#d9f2e2'; el.style.borderColor='#7ec98f'; el.textContent='✓ '+sel; }
+    sfx.ok();
+    setTimeout(()=>gkFinish(), 220);
+  } else {
+    if(el){ el.style.background='#ffe3ea'; el.style.borderColor='#ffb6c8'; }
+    sfx.no(); toast('💛 再看看，是「'+ans+'」');
+  }
 }
 function gkBindTrace(){
   const svg = document.getElementById('gkSvg');
@@ -2379,19 +2385,25 @@ function gkFinish(){
   const bm = gkBandMap();
   const first = !gkLearned(c.c);
   if(first){ bm[c.c]=true; S.bones+=2; save(); goalAdd('chars'); }
+  if(!S.gkUnits) S.gkUnits = {};
+  if(!S.gk) S.gk = {};
   const u = gkUnits()[GK.unit];
   const unitDone = gkUnitDone(u);
   if(unitDone && !S.gkUnits[GK.unit]){ S.gkUnits[GK.unit]=true; S.stars+=1; save(); }
   burst('⭐');
   const _h = document.getElementById('gkHint'); if(_h) _h.textContent = first?'写对啦！⭐':'又写对一遍！';
   setTimeout(()=>{
-    doneModal({art: first?'⭐':'🎉', title: first?`学会写「${c.c}」`:`「${c.c}」又写了一遍`,
+    doneModal({art: first?'⭐':'🎉', title: first?`学会「${c.c}」啦！`:`「${c.c}」又写了一遍`,
       desc: first?`+2 根骨头${unitDone?'，这一关全部完成 +1 颗星':''}`:'真棒',
       next: 'gkNextChar()'});
   }, 450);
 }
 function gkNextChar(){
-  const u = gkUnits()[GK.unit];
+  const units = gkUnits();
+  let idx = units.findIndex(u=>u.some(x=>x.c===GK.ch.c));
+  if(idx < 0) idx = GK.unit||0;
+  GK.unit = idx;
+  const u = units[idx]||[];
   const next = u.find(c=>!gkLearned(c.c));
   if(next){ gkOpenChar(next.c); } else { go('guanka'); }
 }
